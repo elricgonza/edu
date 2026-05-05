@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}Inscripciones{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Inscripciones', '#')]) }}
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-500">{{ inscritos|length }} inscripción(es)</p>
+  {% if current_user.has_permission('inscrito_crear') %}
+  <a href="{{ url_for('inscrito.nuevo') }}" class="btn-primary">+ Nueva Inscripción</a>{% endif %}
+</div>
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Alumno</th><th class="table-header">Curso</th><th class="table-header">Estado</th><th class="table-header">Descuento</th><th class="table-header">Acciones</th>
+  </tr></thead>
+  <tbody>
+    {% for i in inscritos %}<tr class="table-row">
+      <td class="table-cell font-semibold">{{ i.alumno.nombre_completo if i.alumno else '-' }}</td>
+      <td class="table-cell">{{ i.curso.curso or i.curso.paralelo if i.curso else '-' }}</td>
+      <td class="table-cell">
+        {% if i.abandono %}<span class="badge-red">Abandono</span>
+        {% elif i.inscrito %}<span class="badge-green">Inscrito</span>
+        {% elif i.reserva %}<span class="badge-yellow">Reserva</span>
+        {% else %}<span class="badge-gray">Pendiente</span>{% endif %}
+      </td>
+      <td class="table-cell">{{ i.descuento }}%</td>
+      <td class="table-cell"><div class="flex gap-2">
+        {% if current_user.has_permission('inscrito_editar') %}<a href="{{ url_for('inscrito.editar', id=i.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+        <a href="{{ url_for('pago.index', alu_id=i.alu_id) }}" class="btn-secondary text-xs px-3 py-1.5">Ver Pagos</a>
+      </div></td>
+    </tr>{% else %}<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 text-sm">Sin registros.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

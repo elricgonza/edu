@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb, search_bar %}
+{% block page_title %}Alumnos{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Alumnos', '#')]) }}
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+  <div class="flex-1 w-full sm:max-w-sm">{{ search_bar('Buscar alumno...', 'q', q) }}</div>
+  {% if current_user.has_permission('alumno_crear') %}
+  <a href="{{ url_for('alumno.nuevo') }}" class="btn-primary whitespace-nowrap">+ Nuevo Alumno</a>{% endif %}
+</div>
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Nombre Completo</th><th class="table-header">CI</th><th class="table-header">Email</th><th class="table-header">Estado</th><th class="table-header">Acciones</th>
+  </tr></thead>
+  <tbody>
+    {% for a in alumnos %}<tr class="table-row">
+      <td class="table-cell"><div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ a.nombre[0] }}</div>
+        <span class="font-semibold">{{ a.nombre_completo }}</span>
+      </div></td>
+      <td class="table-cell">{{ a.ci or '-' }}</td>
+      <td class="table-cell text-slate-500">{{ a.email or '-' }}</td>
+      <td class="table-cell">{% if a.activo %}<span class="badge-green">Activo</span>{% else %}<span class="badge-gray">Inactivo</span>{% endif %}</td>
+      <td class="table-cell"><div class="flex gap-2">
+        {% if current_user.has_permission('alumno_editar') %}<a href="{{ url_for('alumno.editar', id=a.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+        {% if current_user.has_permission('alumno_borrar') %}{{ confirm_delete(url_for('alumno.eliminar', id=a.id)) }}{% endif %}
+      </div></td>
+    </tr>{% else %}<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 text-sm">No se encontraron alumnos.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

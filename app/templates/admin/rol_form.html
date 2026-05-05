@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if rol else 'Nuevo' }} Rol{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Roles', url_for('admin.roles')), ('Formulario', '#')]) }}
+<div class="max-w-2xl"><div class="card"><form method="POST"><div class="space-y-5">
+  <div><label class="form-label">Nombre del Rol</label><input type="text" name="rol" required value="{{ rol.rol if rol else '' }}" class="form-input" placeholder="Ej: administrador"></div>
+  <div><label class="form-label">Descripción</label><input type="text" name="descripcion" value="{{ rol.descripcion if rol else '' }}" class="form-input"></div>
+  <div>
+    <label class="form-label mb-3 block">Permisos</label>
+    <div class="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto p-1">
+      {% for p in permisos %}
+      <label class="flex items-start gap-2 p-2.5 rounded-lg border border-slate-200 hover:border-primary-300 cursor-pointer text-sm">
+        <input type="checkbox" name="permisos" value="{{ p.id }}"
+               {% if rol and p in rol.permisos %}checked{% endif %}
+               class="w-4 h-4 rounded border-slate-300 text-primary-600 mt-0.5 flex-shrink-0">
+        <div>
+          <p class="font-medium text-slate-700">{{ p.permiso }}</p>
+          {% if p.descripcion %}<p class="text-xs text-slate-500">{{ p.descripcion }}</p>{% endif %}
+        </div>
+      </label>{% endfor %}
+    </div>
+  </div>
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if rol else 'Crear Rol' }}</button>
+  <a href="{{ url_for('admin.roles') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

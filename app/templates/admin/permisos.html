@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}Permisos del Sistema{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Permisos', '#')]) }}
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Permiso</th><th class="table-header">Descripción</th><th class="table-header">Creado</th>
+  </tr></thead>
+  <tbody>
+    {% for p in permisos %}<tr class="table-row">
+      <td class="table-cell"><span class="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded">{{ p.permiso }}</span></td>
+      <td class="table-cell">{{ p.descripcion or '-' }}</td>
+      <td class="table-cell text-xs text-slate-400">{{ p.creado.strftime('%d/%m/%Y') if p.creado else '-' }}</td>
+    </tr>{% else %}<tr><td colspan="3" class="px-4 py-8 text-center text-slate-400 text-sm">Sin permisos.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

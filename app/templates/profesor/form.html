@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if profesor else 'Nuevo' }} Profesor{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Profesores', url_for('profesor.index')), ('Formulario', '#')]) }}
+<div class="max-w-2xl"><div class="card"><form method="POST"><div class="space-y-5">
+  <div class="grid grid-cols-3 gap-4">
+    <div><label class="form-label">Nombre</label><input type="text" name="nombre" required value="{{ profesor.nombre if profesor else '' }}" class="form-input" placeholder="Nombre"></div>
+    <div><label class="form-label">Apellido Paterno</label><input type="text" name="paterno" value="{{ profesor.paterno if profesor else '' }}" class="form-input"></div>
+    <div><label class="form-label">Apellido Materno</label><input type="text" name="materno" value="{{ profesor.materno if profesor else '' }}" class="form-input"></div>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div><label class="form-label">Género</label>
+    <select name="genero" required class="form-select">
+      <option value="M" {% if not profesor or profesor.masculino %}selected{% endif %}>Masculino</option>
+      <option value="F" {% if profesor and not profesor.masculino %}selected{% endif %}>Femenino</option>
+    </select></div>
+    <div><label class="form-label">Carnet de Identidad</label><input type="number" name="ci" value="{{ profesor.ci if profesor else '' }}" class="form-input"></div>
+  </div>
+  <div><label class="form-label">Formación Académica</label><input type="text" name="formacion" value="{{ profesor.formacion if profesor else '' }}" class="form-input" placeholder="Ej: Lic. en Matemáticas"></div>
+  <div><label class="form-label">Email</label><input type="email" name="email" value="{{ profesor.email if profesor else '' }}" class="form-input"></div>
+  <div class="flex items-center gap-3">
+    <input type="checkbox" id="activo" name="activo" {% if not profesor or profesor.activo %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600">
+    <label for="activo" class="text-sm font-medium text-slate-700">Profesor activo</label>
+  </div>
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if profesor else 'Registrar' }}</button>
+  <a href="{{ url_for('profesor.index') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

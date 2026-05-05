@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div class="min-h-screen bg-gradient-to-br from-primary-800 via-primary-700 to-accent-600 flex items-center justify-center p-4">
+  <!-- Background pattern -->
+  <div class="absolute inset-0 opacity-10" style="background-image:url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"></div>
+
+  <div class="relative w-full max-w-md">
+    <!-- Card -->
+    <div class="bg-white rounded-3xl shadow-2xl p-8">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <div class="inline-flex w-16 h-16 rounded-2xl bg-primary-600 items-center justify-center shadow-lg mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+          </svg>
+        </div>
+        <h1 class="font-heading font-bold text-2xl text-slate-800">Sistema de Gestión</h1>
+        <p class="text-slate-500 text-sm mt-1">Unidad Educativa</p>
+      </div>
+
+      <!-- Alerts -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="mb-4 px-4 py-3 rounded-xl text-sm font-medium
+          {% if cat == 'danger' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700{% endif %}">
+          {{ msg }}
+        </div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- Form -->
+      <form method="POST" action="{{ url_for('auth.login') }}" x-data="{ loading: false }" @submit="loading=true">
+        <div class="space-y-5">
+          <div>
+            <label class="form-label">Usuario</label>
+            <input type="text" name="usuario" required autofocus
+                   class="form-input text-base py-3"
+                   placeholder="Ingrese su usuario">
+          </div>
+          <div>
+            <label class="form-label">Contraseña</label>
+            <div class="relative" x-data="{ show: false }">
+              <input :type="show ? 'text' : 'password'" name="password" required
+                     class="form-input text-base py-3 pr-10"
+                     placeholder="••••••••">
+              <button type="button" @click="show=!show"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <svg x-show="!show" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <svg x-show="show" x-cloak class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="remember" name="remember" class="rounded border-slate-300 text-primary-600">
+            <label for="remember" class="text-sm text-slate-600">Mantener sesión iniciada</label>
+          </div>
+          <button type="submit" :disabled="loading"
+                  class="w-full btn-primary py-3 justify-center text-base rounded-xl">
+            <span x-show="!loading">Iniciar Sesión</span>
+            <span x-show="loading" x-cloak class="flex items-center gap-2">
+              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+              Ingresando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+    <p class="text-center text-white/60 text-xs mt-6">© {{ now.year if now else '2025' }} Sistema de Gestión Educativa</p>
+  </div>
+</div>
+{% endblock %}

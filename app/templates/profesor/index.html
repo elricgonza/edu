@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb %}
+{% block page_title %}Profesores{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Profesores', '#')]) }}
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-500">{{ profesores|length }} profesor(es)</p>
+  {% if current_user.has_permission('profesor_crear') %}
+  <a href="{{ url_for('profesor.nuevo') }}" class="btn-primary">+ Nuevo Profesor</a>{% endif %}
+</div>
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Nombre</th><th class="table-header">CI</th><th class="table-header">Formación</th><th class="table-header">Email</th><th class="table-header">Estado</th><th class="table-header">Acciones</th>
+  </tr></thead>
+  <tbody>
+    {% for p in profesores %}<tr class="table-row">
+      <td class="table-cell font-semibold">{{ p.nombre_completo }}</td>
+      <td class="table-cell">{{ p.ci or '-' }}</td>
+      <td class="table-cell">{{ p.formacion or '-' }}</td>
+      <td class="table-cell">{{ p.email or '-' }}</td>
+      <td class="table-cell">{% if p.activo %}<span class="badge-green">Activo</span>{% else %}<span class="badge-gray">Inactivo</span>{% endif %}</td>
+      <td class="table-cell"><div class="flex gap-2">
+        {% if current_user.has_permission('profesor_editar') %}<a href="{{ url_for('profesor.editar', id=p.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+        {% if current_user.has_permission('profesor_borrar') %}{{ confirm_delete(url_for('profesor.eliminar', id=p.id)) }}{% endif %}
+      </div></td>
+    </tr>{% else %}<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Sin registros.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

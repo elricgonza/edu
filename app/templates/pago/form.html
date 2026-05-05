@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}Registrar Pago — Cuota #{{ pago.nro_cuota }}{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Pagos', url_for('pago.index')), ('Registrar Pago', '#')]) }}
+<div class="max-w-lg"><div class="card">
+  <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex justify-between items-center">
+    <div>
+      <p class="font-semibold text-primary-800">Cuota #{{ pago.nro_cuota }}</p>
+      <p class="text-sm text-primary-600">Alumno: {{ pago.inscrito.alumno.nombre_completo if pago.inscrito.alumno else '-' }}</p>
+    </div>
+    <p class="text-2xl font-heading font-bold text-primary-700">Bs. {{ "%.2f"|format(pago.cuota) }}</p>
+  </div>
+  <form method="POST"><div class="space-y-5">
+    <div><label class="form-label">Método de Pago</label>
+    <select name="metodo_pago" required class="form-select">
+      <option value="">Seleccionar...</option>
+      <option value="Efectivo">Efectivo</option>
+      <option value="Transferencia">Transferencia Bancaria</option>
+      <option value="QR">Pago QR</option>
+      <option value="Cheque">Cheque</option>
+    </select></div>
+    <div><label class="form-label">Fecha de Pago</label><input type="date" name="fecha_pago" required value="{{ today }}" class="form-input"></div>
+    <div><label class="form-label">Nro. Referencia / Comprobante</label><input type="text" name="referencia_pago" class="form-input" placeholder="Ej: TRF-0001"></div>
+    <div><label class="form-label">Observaciones</label><input type="text" name="obs" class="form-input"></div>
+  </div>
+  <div class="flex gap-3 mt-8">
+    <button type="submit" class="btn-success">Confirmar Pago</button>
+    <a href="{{ url_for('pago.index') }}" class="btn-secondary">Cancelar</a>
+  </div></form>
+</div></div>
+{% endblock %}

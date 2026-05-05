@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block title %}{{ 'Editar' if gestion else 'Nueva' }} Gestión — UADED{% endblock %}
+{% block page_title %}{{ 'Editar' if gestion else 'Nueva' }} Gestión Académica{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Gestiones', url_for('gestion.index')), ('{{ "Editar" if gestion else "Nueva" }}', '#')]) }}
+
+<div class="max-w-lg">
+  <div class="card">
+    <form method="POST">
+      <div class="space-y-5">
+        <div>
+          <label class="form-label">Año de Gestión</label>
+          <input type="number" name="gestion" required min="2000" max="2100"
+                 value="{{ gestion.gestion if gestion else '' }}"
+                 class="form-input" placeholder="Ej: 2025">
+        </div>
+        <div>
+          <label class="form-label">Plan de Estudios</label>
+          <input type="text" name="plan" required maxlength="150"
+                 value="{{ gestion.plan if gestion else '' }}"
+                 class="form-input" placeholder="Ej: Plan de estudios 2025">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Fecha de Inicio</label>
+            <input type="date" name="inicio" required
+                   value="{{ gestion.inicio.isoformat() if gestion else '' }}"
+                   class="form-input">
+          </div>
+          <div>
+            <label class="form-label">Fecha de Fin</label>
+            <input type="date" name="fin" required
+                   value="{{ gestion.fin.isoformat() if gestion else '' }}"
+                   class="form-input">
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="activo" name="activo"
+                 {% if not gestion or gestion.activo %}checked{% endif %}
+                 class="rounded border-slate-300 text-primary-600 w-4 h-4">
+          <label for="activo" class="text-sm font-medium text-slate-700">Gestión activa</label>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-8">
+        <button type="submit" class="btn-primary">
+          {{ 'Guardar Cambios' if gestion else 'Crear Gestión' }}
+        </button>
+        <a href="{{ url_for('gestion.index') }}" class="btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

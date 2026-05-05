@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb %}
+{% block title %}Gestiones — UADED{% endblock %}
+{% block page_title %}Gestiones Académicas{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Gestiones', '#')]) }}
+
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-500">{{ gestiones|length }} gestión(es) registradas</p>
+  {% if current_user.has_permission('gestion_crear') %}
+  <a href="{{ url_for('gestion.nueva') }}" class="btn-primary">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nueva Gestión
+  </a>
+  {% endif %}
+</div>
+
+<div class="card p-0 overflow-hidden">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="table-header">Año</th>
+        <th class="table-header">Plan</th>
+        <th class="table-header">Inicio</th>
+        <th class="table-header">Fin</th>
+        <th class="table-header">Estado</th>
+        <th class="table-header">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in gestiones %}
+      <tr class="table-row">
+        <td class="table-cell font-bold text-primary-700">{{ g.gestion }}</td>
+        <td class="table-cell">{{ g.plan }}</td>
+        <td class="table-cell">{{ g.inicio.strftime('%d/%m/%Y') }}</td>
+        <td class="table-cell">{{ g.fin.strftime('%d/%m/%Y') }}</td>
+        <td class="table-cell">
+          {% if g.activo %}<span class="badge-green">Activa</span>{% else %}<span class="badge-gray">Inactiva</span>{% endif %}
+        </td>
+        <td class="table-cell">
+          <div class="flex items-center gap-2">
+            {% if current_user.has_permission('gestion_editar') %}
+            <a href="{{ url_for('gestion.editar', id=g.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>
+            {% endif %}
+            {% if current_user.has_permission('gestion_borrar') %}
+            {{ confirm_delete(url_for('gestion.eliminar', id=g.id)) }}
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">No hay gestiones registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

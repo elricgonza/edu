@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if nota else 'Nueva' }} Nota{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Calificaciones', url_for('nota.index')), ('Formulario', '#')]) }}
+<div class="max-w-lg"><div class="card"><form method="POST" x-data="{n1:{{ nota.nota1 if nota else 0 }},n2:{{ nota.nota2 if nota else 0 }},n3:{{ nota.nota3 if nota else 0 }}}">
+  <div class="space-y-5">
+    <div><label class="form-label">Inscripción (Alumno)</label>
+    <select name="ins_id" required class="form-select"><option value="">Seleccionar...</option>
+      {% for i in inscritos %}<option value="{{ i.id }}" {% if nota and nota.ins_id==i.id %}selected{% endif %}>{{ i.alumno.nombre_completo if i.alumno else i.id }}</option>{% endfor %}
+    </select></div>
+    <div><label class="form-label">Materia</label>
+    <select name="mat_id" required class="form-select"><option value="">Seleccionar...</option>
+      {% for m in materias %}<option value="{{ m.id }}" {% if nota and nota.mat_id==m.id %}selected{% endif %}>{{ m.materia }}</option>{% endfor %}
+    </select></div>
+    <div class="grid grid-cols-3 gap-4">
+      <div><label class="form-label">Nota 1</label><input type="number" name="nota1" x-model.number="n1" min="0" max="100" class="form-input text-center font-bold text-lg"></div>
+      <div><label class="form-label">Nota 2</label><input type="number" name="nota2" x-model.number="n2" min="0" max="100" class="form-input text-center font-bold text-lg"></div>
+      <div><label class="form-label">Nota 3</label><input type="number" name="nota3" x-model.number="n3" min="0" max="100" class="form-input text-center font-bold text-lg"></div>
+    </div>
+    <div class="bg-slate-50 rounded-xl p-4 flex justify-between items-center">
+      <span class="text-sm font-semibold text-slate-700">Nota Final (promedio)</span>
+      <span class="text-2xl font-heading font-bold text-primary-700" x-text="((n1+n2+n3)/3).toFixed(1)"></span>
+    </div>
+    <div><label class="form-label">Nota Mínima de Aprobación</label><input type="number" name="nota_aprob" value="{{ nota.nota_aprob if nota else 51 }}" min="0" max="100" class="form-input"></div>
+    <div><label class="form-label">Observaciones</label><input type="text" name="obs" value="{{ nota.obs if nota else '' }}" class="form-input"></div>
+  </div>
+  <div class="flex gap-3 mt-8">
+    <button type="submit" class="btn-primary">{{ 'Guardar' if nota else 'Registrar Nota' }}</button>
+    <a href="{{ url_for('nota.index') }}" class="btn-secondary">Cancelar</a>
+  </div>
+</form></div></div>
+{% endblock %}
