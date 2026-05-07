@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de Deploy — Flask + PostgreSQL + HTMX</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2335;
+    --border: #1e2d45;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1520;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 60px 0 48px;
+    position: relative;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.25);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .badge::before { content: '▶'; font-size: 8px; }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Stack pills */
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .pill.py { border-color: #3b82f6; color: #3b82f6; }
+  .pill.pg { border-color: #06b6d4; color: #06b6d4; }
+  .pill.htmx { border-color: #8b5cf6; color: #8b5cf6; }
+  .pill.alpine { border-color: #10b981; color: #10b981; }
+  .pill.tw { border-color: #f59e0b; color: #f59e0b; }
+
+  /* Provider Selector */
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title .num {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .section-desc {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    margin-left: 44px;
+  }
+
+  .providers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .provider-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .provider-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .provider-card:hover { border-color: var(--card-color, var(--accent)); transform: translateY(-2px); }
+  .provider-card:hover::before { opacity: 1; }
+  .provider-card.active { border-color: var(--card-color, var(--accent)); background: var(--surface2); }
+  .provider-card.active::before { opacity: 1; }
+
+  .provider-logo { font-size: 1.8rem; margin-bottom: 8px; }
+  .provider-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .provider-tier {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .tier-free { background: rgba(16,185,129,0.15); color: #10b981; }
+  .tier-freemium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .provider-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+
+  /* Steps */
+  .steps-container { display: none; }
+  .steps-container.active { display: block; }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .step:hover { border-color: rgba(0,229,255,0.3); }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .step-num {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .step.done .step-num { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; }
+
+  .step-title-wrap { flex: 1; }
+  .step-title { font-weight: 700; font-size: 1rem; }
+  .step-subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .step-toggle {
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .step.open .step-toggle { transform: rotate(180deg); }
+
+  .step-body {
+    display: none;
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .step.open .step-body { display: block; }
+
+  .step-body p { color: var(--muted); font-size: 0.9rem; line-height: 1.7; margin: 16px 0 12px; }
+
+  /* Code blocks */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+  }
+
+  .code-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--accent3); color: var(--accent3); }
+
+  pre {
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .c-comment { color: #4a6785; }
+  .c-key { color: #7dd3fc; }
+  .c-str { color: #86efac; }
+  .c-cmd { color: #fbbf24; }
+  .c-kw { color: #c084fc; }
+
+  /* Info boxes */
+  .info-box {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.87rem;
+    line-height: 1.6;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .info-box.tip { background: rgba(0,229,255,0.07); border: 1px solid rgba(0,229,255,0.2); color: #a5f3fc; }
+  .info-box.warn { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); color: #fde68a; }
+  .info-box.ok { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); color: #a7f3d0; }
+
+  .info-box .icon { flex-shrink: 0; font-size: 1rem; }
+
+  /* Checklist */
+  .checklist { list-style: none; margin: 12px 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li:hover { color: var(--text); }
+  .checklist li.done { color: var(--accent3); text-decoration: line-through; }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    transition: all 0.15s;
+  }
+  .checklist li.done .check-box { background: var(--accent3); border-color: var(--accent3); }
+
+  /* Summary table */
+  .comparison {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 16px 0;
+  }
+  .comparison th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .comparison tr:last-child td { border-bottom: none; }
+  .comparison tr:hover td { color: var(--text); background: rgba(255,255,255,0.02); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+  .tag.green { background: rgba(16,185,129,0.15); color: #10b981; }
+  .tag.yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .tag.red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .tag.blue { background: rgba(59,130,246,0.15); color: #93c5fd; }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  /* Done button */
+  .mark-done {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.15s;
+  }
+  .mark-done:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  @media (max-width: 600px) {
+    .providers { grid-template-columns: 1fr 1fr; }
+    pre { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="badge">Guía de Despliegue · 2025</div>
+    <h1>Deploy de tu App<br><span>Flask + PostgreSQL</span></h1>
+    <p class="subtitle">Guía paso a paso para publicar tu aplicación web con hosting gratuito. Selecciona el proveedor y sigue los pasos.</p>
+    <div class="stack">
+      <span class="pill py">🐍 Python / Flask</span>
+      <span class="pill pg">🐘 PostgreSQL</span>
+      <span class="pill htmx">⚡ HTMX</span>
+      <span class="pill alpine">🏔 Alpine.js</span>
+      <span class="pill tw">🎨 Tailwind CSS</span>
+    </div>
+  </header>
+
+  <!-- PASO 0: Preparar proyecto -->
+  <div class="section-title"><span class="num">0</span> Preparar el Proyecto</div>
+  <p class="section-desc">Antes de hacer deploy, tu proyecto necesita estos archivos clave.</p>
+
+  <div class="step open" id="step-prep">
+    <div class="step-header" onclick="toggleStep('step-prep')">
+      <div class="step-num">📁</div>
+      <div class="step-title-wrap">
+        <div class="step-title">Estructura de archivos requerida</div>
+        <div class="step-subtitle">requirements.txt · Procfile · .env · wsgi.py</div>
+      </div>
+      <div class="step-toggle">▼</div>
+    </div>
+    <div class="step-body">
+      <p>Tu repositorio debe tener esta estructura antes de hacer deploy:</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">estructura del proyecto</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre><span class="c-comment"># Estructura mínima recomendada</span>
+mi-app/
+├── app/
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── models.py
+│   └── templates/
+│       └── index.html
+├── static/
+│   └── css/
+├── <span class="c-key">requirements.txt</span>       <span class="c-comment"># dependencias</span>
+├── <span class="c-key">Procfile</span>               <span class="c-comment"># comando de inicio</span>
+├── <span class="c-key">wsgi.py</span>                <span class="c-comment"># punto de entrada</span>
+├── <span class="c-key">.env.example</span>           <span class="c-comment"># vars de entorno (sin datos reales)</span>
+├── <span class="c-key">.gitignore</span>             <span class="c-comment"># excluir .env y __pycache__</span>
+└── runtime.txt            <span class="c-comment"># versión de Python</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">requirements.txt</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre>Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+gunicorn==22.0.0
+python-dotenv==1.0.1
+Flask-Migrate==4.0.7</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">wsgi.py</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre><span class="c-kw">from</span> app <span class="c-kw">import</span> create_app
+
+app = create_app()
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    app.run()</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Procfile</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre><span class="c-key">web</span>: gunicorn wsgi:app</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">runtime.txt</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre>python-3.12.3</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">.gitignore</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+        <pre>.env
+__pycache__/
+*.pyc
+*.pyo
+instance/
+.venv/
+venv/
+*.egg-info/</pre>
+      </div>
+
+      <div class="info-box warn">
+        <span class="icon">⚠️</span>
+        <span>Nunca subas tu archivo <code>.env</code> al repositorio. Usa variables de entorno del panel del proveedor.</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Selector de proveedores -->
+  <div class="section-title"><span class="num">1</span> Elegir Proveedor de Hosting</div>
+  <p class="section-desc">Haz clic en el proveedor que prefieras para ver los pasos específicos.</p>
+
+  <div class="providers">
+    <div class="provider-card" style="--card-color:#7c3aed" onclick="selectProvider('render')">
+      <div class="provider-logo">🎯</div>
+      <div class="provider-name">Render</div>
+      <div class="provider-tier tier-free">✓ Gratuito</div>
+      <div class="provider-desc">El más recomendado. PostgreSQL gratis 90 días, deploy automático desde GitHub.</div>
+    </div>
+    <div class="provider-card" style="--card-color:#00e5ff" onclick="selectProvider('railway')">
+      <div class="provider-logo">🚂</div>
+      <div class="provider-name">Railway</div>
+      <div class="provider-tier tier-freemium">Freemium</div>
+      <div class="provider-desc">$5 crédito gratis al mes. PostgreSQL incluido. Muy fácil de usar.</div>
+    </div>
+    <div class="provider-card" style="--card-color:#10b981" onclick="selectProvider('fly')">
+      <div class="provider-logo">🪁</div>
+      <div class="provider-name">Fly.io</div>
+      <div class="provider-tier tier-freemium">Freemium</div>
+      <div class="provider-desc">Contenedores Docker. Tier gratuito generoso. Más control y flexibilidad.</div>
+    </div>
+    <div class="provider-card" style="--card-color:#f59e0b" onclick="selectProvider('heroku')">
+      <div class="provider-logo">💜</div>
+      <div class="provider-name">Heroku</div>
+      <div class="provider-tier tier-freemium">Eco $5/mes</div>
+      <div class="provider-desc">El clásico. Plan Eco muy barato. Ecosistema maduro con muchos add-ons.</div>
+    </div>
+  </div>
+
+  <!-- RENDER Steps -->
+  <div class="steps-container" id="steps-render">
+    <div class="info-box ok">
+      <span class="icon">🎯</span>
+      <span><strong>Render</strong> — Recomendado para principiantes. PostgreSQL gratis por 90 días, luego $7/mes. El servicio web gratuito se "duerme" tras 15 min de inactividad (cold start ~30s).</span>
+    </div>
+
+    <div class="step" id="r1">
+      <div class="step-header" onclick="toggleStep('r1')">
+        <div class="step-num">1</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Crear cuenta y conectar GitHub</div>
+          <div class="step-subtitle">render.com → Sign up with GitHub</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Ve a <strong>render.com</strong>, regístrate con tu cuenta de GitHub. Autoriza el acceso al repositorio de tu app.</p>
+        <div class="info-box tip">
+          <span class="icon">💡</span>
+          <span>Tu código debe estar en un repositorio de GitHub (público o privado). Si no lo tienes, crea uno: <code>git init → git push</code></span>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Subir proyecto a GitHub</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># Inicializar repositorio</span>
+<span class="c-cmd">git</span> init
+<span class="c-cmd">git</span> add .
+<span class="c-cmd">git</span> commit -m <span class="c-str">"Initial commit"</span>
+<span class="c-cmd">git</span> branch -M main
+<span class="c-cmd">git</span> remote add origin https://github.com/TU_USUARIO/TU_REPO.git
+<span class="c-cmd">git</span> push -u origin main</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('r1')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="r2">
+      <div class="step-header" onclick="toggleStep('r2')">
+        <div class="step-num">2</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Crear la base de datos PostgreSQL</div>
+          <div class="step-subtitle">New → PostgreSQL → Free tier</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>En el Dashboard de Render: <strong>New + → PostgreSQL</strong></p>
+        <ul class="checklist" id="cl-r2">
+          <li onclick="toggleCheck(this)"><span class="check-box"></span> Name: <code>mi-app-db</code></li>
+          <li onclick="toggleCheck(this)"><span class="check-box"></span> Region: Ohio (US East) — el más rápido</li>
+          <li onclick="toggleCheck(this)"><span class="check-box"></span> Plan: <strong>Free</strong></li>
+          <li onclick="toggleCheck(this)"><span class="check-box"></span> Clic en <strong>Create Database</strong></li>
+          <li onclick="toggleCheck(this)"><span class="check-box"></span> Copiar el valor de <strong>"Internal Database URL"</strong></li>
+        </ul>
+        <div class="info-box warn">
+          <span class="icon">⚠️</span>
+          <span>Guarda el <strong>Internal Database URL</strong> — lo necesitarás en el siguiente paso. Tiene el formato: <code>postgresql://user:pass@host/dbname</code></span>
+        </div>
+        <button class="mark-done" onclick="markDone('r2')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="r3">
+      <div class="step-header" onclick="toggleStep('r3')">
+        <div class="step-num">3</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Crear el Web Service</div>
+          <div class="step-subtitle">New → Web Service → conectar repositorio</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>En Render: <strong>New + → Web Service</strong>, selecciona tu repositorio de GitHub.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Configuración del Web Service</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-key">Name</span>:            mi-app
+<span class="c-key">Region</span>:          Ohio (US East)
+<span class="c-key">Branch</span>:          main
+<span class="c-key">Runtime</span>:         Python 3
+<span class="c-key">Build Command</span>:   pip install -r requirements.txt
+<span class="c-key">Start Command</span>:   gunicorn wsgi:app
+<span class="c-key">Plan</span>:            Free</pre>
+        </div>
+        <p>Luego agrega las <strong>Environment Variables</strong>:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Variables de entorno</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-key">DATABASE_URL</span>=postgresql://user:pass@host/dbname  <span class="c-comment"># del paso anterior</span>
+<span class="c-key">SECRET_KEY</span>=una-clave-secreta-muy-larga-y-aleatoria
+<span class="c-key">FLASK_ENV</span>=production
+<span class="c-key">PYTHON_VERSION</span>=3.12.3</pre>
+        </div>
+        <div class="info-box tip">
+          <span class="icon">💡</span>
+          <span>En tu <code>app/__init__.py</code> usa: <code>app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')</code></span>
+        </div>
+        <button class="mark-done" onclick="markDone('r3')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="r4">
+      <div class="step-header" onclick="toggleStep('r4')">
+        <div class="step-num">4</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Inicializar la base de datos</div>
+          <div class="step-subtitle">Migrations con Flask-Migrate o db.create_all()</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Una vez que el deploy esté corriendo, ejecuta las migraciones desde la consola de Render (<strong>Shell</strong> tab):</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Opción A: Flask-Migrate (recomendado)</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-cmd">flask</span> db init       <span class="c-comment"># solo la primera vez</span>
+<span class="c-cmd">flask</span> db migrate -m <span class="c-str">"initial"</span>
+<span class="c-cmd">flask</span> db upgrade</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Opción B: db.create_all() en Python</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-kw">from</span> app <span class="c-kw">import</span> create_app, db
+app = create_app()
+<span class="c-kw">with</span> app.app_context():
+    db.create_all()
+    print(<span class="c-str">"✓ Tablas creadas"</span>)</pre>
+        </div>
+        <div class="info-box tip">
+          <span class="icon">💡</span>
+          <span>Puedes también agregar un <strong>Build Command</strong> con: <code>pip install -r requirements.txt && flask db upgrade</code> para que las migraciones corran automáticamente en cada deploy.</span>
+        </div>
+        <button class="mark-done" onclick="markDone('r4')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="r5">
+      <div class="step-header" onclick="toggleStep('r5')">
+        <div class="step-num">5</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Tailwind CSS en producción</div>
+          <div class="step-subtitle">CDN Play vs Build process</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Para Tailwind en producción tienes dos opciones:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Opción A: CDN (más simple, para pruebas)</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment">&lt;!-- En tu base.html --&gt;</span>
+&lt;<span class="c-key">script</span> src=<span class="c-str">"https://cdn.tailwindcss.com"</span>&gt;&lt;/script&gt;</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Opción B: Build con npm (producción real)</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># instalar tailwind</span>
+<span class="c-cmd">npm</span> install -D tailwindcss
+<span class="c-cmd">npx</span> tailwindcss init
+
+<span class="c-comment"># En tailwind.config.js:</span>
+content: [<span class="c-str">"./app/templates/**/*.html"</span>]
+
+<span class="c-comment"># Build del CSS</span>
+<span class="c-cmd">npx</span> tailwindcss -i ./static/css/input.css -o ./static/css/output.css
+
+<span class="c-comment"># En Render, Build Command:</span>
+npm install && npx tailwindcss build && pip install -r requirements.txt</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('r5')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="r6">
+      <div class="step-header" onclick="toggleStep('r6')">
+        <div class="step-num">6</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Deploy continuo (CI/CD)</div>
+          <div class="step-subtitle">Push a GitHub = deploy automático</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Render detecta automáticamente cada push a tu branch <code>main</code> y redeploya. Para hacer cambios:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Workflow de desarrollo</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># Editar código localmente</span>
+<span class="c-cmd">git</span> add .
+<span class="c-cmd">git</span> commit -m <span class="c-str">"feat: nueva funcionalidad"</span>
+<span class="c-cmd">git</span> push origin main
+<span class="c-comment"># → Render detecta el push y despliega automáticamente ✓</span></pre>
+        </div>
+        <div class="info-box ok">
+          <span class="icon">✅</span>
+          <span>Tu app estará disponible en: <code>https://mi-app.onrender.com</code></span>
+        </div>
+        <button class="mark-done" onclick="markDone('r6')">✓ Deploy completado 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAILWAY Steps -->
+  <div class="steps-container" id="steps-railway">
+    <div class="info-box ok">
+      <span class="icon">🚂</span>
+      <span><strong>Railway</strong> — $5 USD de crédito gratis/mes (aproximadamente 500 horas de ejecución). PostgreSQL incluido. Interfaz muy intuitiva.</span>
+    </div>
+
+    <div class="step" id="rw1">
+      <div class="step-header" onclick="toggleStep('rw1')">
+        <div class="step-num">1</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Crear proyecto en Railway</div>
+          <div class="step-subtitle">railway.app → New Project → Deploy from GitHub</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Entra a <strong>railway.app</strong>, inicia sesión con GitHub, y crea un nuevo proyecto desde tu repositorio.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">O usando Railway CLI</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># Instalar CLI</span>
+<span class="c-cmd">npm</span> install -g @railway/cli
+
+<span class="c-comment"># Login</span>
+<span class="c-cmd">railway</span> login
+
+<span class="c-comment"># Inicializar en tu proyecto</span>
+<span class="c-cmd">railway</span> init
+
+<span class="c-comment"># Deploy</span>
+<span class="c-cmd">railway</span> up</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('rw1')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="rw2">
+      <div class="step-header" onclick="toggleStep('rw2')">
+        <div class="step-num">2</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Agregar PostgreSQL</div>
+          <div class="step-subtitle">New → Database → Add PostgreSQL</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <p>Dentro de tu proyecto en Railway: <strong>+ New → Database → Add PostgreSQL</strong>. Railway automáticamente expone la variable <code>DATABASE_URL</code> a tu servicio.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Variables disponibles automáticamente</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-key">DATABASE_URL</span>          <span class="c-comment"># URL completa (auto)</span>
+<span class="c-key">PGHOST</span>                <span class="c-comment"># host (auto)</span>
+<span class="c-key">PGPORT</span>                <span class="c-comment"># puerto (auto)</span>
+<span class="c-key">PGUSER</span>                <span class="c-comment"># usuario (auto)</span>
+<span class="c-key">PGPASSWORD</span>            <span class="c-comment"># contraseña (auto)</span>
+<span class="c-key">PGDATABASE</span>            <span class="c-comment"># nombre db (auto)</span></pre>
+        </div>
+        <p>Solo agrega tus variables personalizadas:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Variables a agregar manualmente</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-key">SECRET_KEY</span>=tu-clave-secreta
+<span class="c-key">FLASK_ENV</span>=production</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('rw2')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="rw3">
+      <div class="step-header" onclick="toggleStep('rw3')">
+        <div class="step-num">3</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Configurar el Start Command</div>
+          <div class="step-subtitle">Settings → Start Command</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Start Command en Railway Settings</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>gunicorn wsgi:app --bind 0.0.0.0:$PORT</pre>
+        </div>
+        <div class="info-box tip">
+          <span class="icon">💡</span>
+          <span>Railway inyecta la variable <code>$PORT</code> automáticamente. Gunicorn debe escuchar en ese puerto.</span>
+        </div>
+        <button class="mark-done" onclick="markDone('rw3')">✓ Deploy completado 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLY.IO Steps -->
+  <div class="steps-container" id="steps-fly">
+    <div class="info-box ok">
+      <span class="icon">🪁</span>
+      <span><strong>Fly.io</strong> — Tier gratuito incluye 3 VMs pequeñas, 3GB de almacenamiento y PostgreSQL básico. Usa Docker internamente, más control y rendimiento.</span>
+    </div>
+
+    <div class="step" id="f1">
+      <div class="step-header" onclick="toggleStep('f1')">
+        <div class="step-num">1</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Instalar flyctl y login</div>
+          <div class="step-subtitle">CLI de Fly.io</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Instalar flyctl</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># macOS / Linux</span>
+<span class="c-cmd">curl</span> -L https://fly.io/install.sh | sh
+
+<span class="c-comment"># Windows (PowerShell)</span>
+<span class="c-cmd">iwr</span> https://fly.io/install.ps1 -useb | iex
+
+<span class="c-comment"># Login</span>
+<span class="c-cmd">fly</span> auth login</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('f1')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="f2">
+      <div class="step-header" onclick="toggleStep('f2')">
+        <div class="step-num">2</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Lanzar la aplicación</div>
+          <div class="step-subtitle">fly launch — genera fly.toml automáticamente</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Desde la raíz de tu proyecto</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-cmd">fly</span> launch
+<span class="c-comment"># → Detecta Python automáticamente</span>
+<span class="c-comment"># → Crea fly.toml, Dockerfile, .dockerignore</span>
+<span class="c-comment"># → Pregunta nombre, región, PostgreSQL</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">fly.toml generado (ajusta si es necesario)</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>[build]
+
+[env]
+  <span class="c-key">FLASK_ENV</span> = <span class="c-str">"production"</span>
+
+[[services]]
+  <span class="c-key">http_checks</span> = []
+  <span class="c-key">internal_port</span> = 8080
+  <span class="c-key">protocol</span> = <span class="c-str">"tcp"</span>
+
+  [[services.ports]]
+    <span class="c-key">handlers</span> = [<span class="c-str">"http"</span>]
+    <span class="c-key">port</span> = 80
+
+  [[services.ports]]
+    <span class="c-key">handlers</span> = [<span class="c-str">"tls"</span>, <span class="c-str">"http"</span>]
+    <span class="c-key">port</span> = 443</pre>
+        </div>
+        <button class="mark-done" onclick="markDone('f2')">✓ Listo, continuar</button>
+      </div>
+    </div>
+
+    <div class="step" id="f3">
+      <div class="step-header" onclick="toggleStep('f3')">
+        <div class="step-num">3</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Crear PostgreSQL y conectar</div>
+          <div class="step-subtitle">fly postgres create + attach</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Crear y adjuntar base de datos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># Crear cluster de PostgreSQL</span>
+<span class="c-cmd">fly</span> postgres create --name mi-app-db
+
+<span class="c-comment"># Adjuntar al app (expone DATABASE_URL automáticamente)</span>
+<span class="c-cmd">fly</span> postgres attach mi-app-db
+
+<span class="c-comment"># Agregar SECRET_KEY</span>
+<span class="c-cmd">fly</span> secrets set SECRET_KEY=<span class="c-str">"tu-clave-secreta"</span>
+
+<span class="c-comment"># Deploy</span>
+<span class="c-cmd">fly</span> deploy</pre>
+        </div>
+        <div class="info-box ok">
+          <span class="icon">✅</span>
+          <span>Tu app estará en: <code>https://mi-app.fly.dev</code></span>
+        </div>
+        <button class="mark-done" onclick="markDone('f3')">✓ Deploy completado 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEROKU Steps -->
+  <div class="steps-container" id="steps-heroku">
+    <div class="info-box warn">
+      <span class="icon">💜</span>
+      <span><strong>Heroku</strong> — Ya no tiene tier gratuito. El plan <strong>Eco</strong> cuesta $5/mes (incluye dynos que duermen). PostgreSQL gratuito con límite de 10,000 filas (plan Essential $5/mes para producción real).</span>
+    </div>
+
+    <div class="step" id="h1">
+      <div class="step-header" onclick="toggleStep('h1')">
+        <div class="step-num">1</div>
+        <div class="step-title-wrap">
+          <div class="step-title">Instalar Heroku CLI y crear app</div>
+          <div class="step-subtitle">heroku.com → CLI → heroku create</div>
+        </div>
+        <div class="step-toggle">▼</div>
+      </div>
+      <div class="step-body">
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Setup inicial</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="c-comment"># Instalar CLI desde heroku.com/cli</span>
+<span class="c-cmd">heroku</span> login
+
+<span class="c-comment"># Crear app</span>
+<span class="c-cmd">heroku</span> create mi-app-nombre
+
+<span class="c-comment"># Agregar PostgreSQL</span>
+<span class="c-cmd">heroku</span> addons:create heroku-postgresql:essential-0
+
+<span class="c-comment"># Configurar vars de entorno</span>
+<span class="c-cmd">heroku</span> config:set SECRET_KEY=<span class="c-str">"tu-clave-secreta"</span>
+<span class="c-cmd">heroku</span> config:set FLASK_ENV=production
+
+<span class="c-comment"># Deploy via git</span>
+<span class="c-cmd">git</span> push heroku main
+
+<span class="c-comment"># Ejecutar migraciones</span>
+<span class="c-cmd">heroku</span> run flask db upgrade</pre>
+        </div>
+        <div class="info-box ok">
+          <span class="icon">✅</span>
+          <span>Tu app estará en: <code>https://mi-app-nombre.herokuapp.com</code></span>
+        </div>
+        <button class="mark-done" onclick="markDone('h1')">✓ Deploy completado 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Comparativa -->
+  <div class="section-title"><span class="num">2</span> Comparativa de Proveedores</div>
+  <p class="section-desc">Resumen para ayudarte a elegir el más adecuado según tu caso.</p>
+
+  <table class="comparison">
+    <thead>
+      <tr>
+        <th>Proveedor</th>
+        <th>Costo</th>
+        <th>PostgreSQL</th>
+        <th>Sleep</th>
+        <th>Facilidad</th>
+        <th>Ideal para</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>🎯 Render</strong></td>
+        <td><span class="tag green">Gratis</span></td>
+        <td><span class="tag yellow">90 días gratis</span></td>
+        <td><span class="tag yellow">Sí (15min)</span></td>
+        <td><span class="tag green">★★★★★</span></td>
+        <td>Principiantes</td>
+      </tr>
+      <tr>
+        <td><strong>🚂 Railway</strong></td>
+        <td><span class="tag yellow">$5 crédito/mes</span></td>
+        <td><span class="tag green">Incluido</span></td>
+        <td><span class="tag green">No</span></td>
+        <td><span class="tag green">★★★★★</span></td>
+        <td>Proyectos activos</td>
+      </tr>
+      <tr>
+        <td><strong>🪁 Fly.io</strong></td>
+        <td><span class="tag green">Gratis (limitado)</span></td>
+        <td><span class="tag green">Incluido</span></td>
+        <td><span class="tag green">No</span></td>
+        <td><span class="tag yellow">★★★☆☆</span></td>
+        <td>Devs con Docker</td>
+      </tr>
+      <tr>
+        <td><strong>💜 Heroku</strong></td>
+        <td><span class="tag yellow">Eco $5/mes</span></td>
+        <td><span class="tag yellow">Mini $5/mes</span></td>
+        <td><span class="tag yellow">Sí (30min)</span></td>
+        <td><span class="tag green">★★★★☆</span></td>
+        <td>Ecosistema maduro</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box ok" style="margin-top:24px">
+    <span class="icon">🏆</span>
+    <span><strong>Recomendación:</strong> Empieza con <strong>Render</strong> (el más fácil y gratis). Si necesitas más performance o el plan gratuito no alcanza, migra a <strong>Railway</strong>. Para producción real, considera <strong>Fly.io</strong> o un VPS (DigitalOcean, Hetzner).</span>
+  </div>
+
+</div>
+
+<script>
+function toggleStep(id) {
+  const step = document.getElementById(id);
+  step.classList.toggle('open');
+}
+
+function markDone(id) {
+  const step = document.getElementById(id);
+  step.classList.add('done');
+  step.classList.remove('open');
+}
+
+function toggleCheck(li) {
+  li.classList.toggle('done');
+  const box = li.querySelector('.check-box');
+  box.textContent = li.classList.contains('done') ? '✓' : '';
+}
+
+function selectProvider(name) {
+  // Update cards
+  document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  // Hide all steps
+  document.querySelectorAll('.steps-container').forEach(s => s.classList.remove('active'));
+
+  // Show selected
+  const target = document.getElementById('steps-' + name);
+  if (target) {
+    target.classList.add('active');
+    // Open first step
+    const firstStep = target.querySelector('.step');
+    if (firstStep) firstStep.classList.add('open');
+    // Scroll to it
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiado ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// Auto-select Render on load
+window.addEventListener('load', () => {
+  document.querySelector('.provider-card').classList.add('active');
+  document.getElementById('steps-render').classList.add('active');
+  const firstStep = document.querySelector('#steps-render .step');
+  if (firstStep) firstStep.classList.add('open');
+});
+</script>
+</body>
+</html>
