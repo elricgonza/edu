@@ -5,7 +5,7 @@ app = create_app()
 
 def inicializar_si_necesario():
     with app.app_context():
-        from app.models import Usr
+        from app.models import Usuario
         try:
             # Si no hay usuarios, inicializar
             if not Usr.query.first():
