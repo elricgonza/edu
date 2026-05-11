@@ -1,0 +1,216 @@
+deploy
+al publicar una app web en render.com, como ejecutar un script de python (para la creación de la bd y datos de prueba) previo a la publicación ?
+6:35 AM
+Claude ha respondido: Hay 3 métodos para hacer esto en Render.
+Organizó tres enfoques con ejemplos de código concretos
+
+Hay 3 métodos para hacer esto en Render. Te explico todos con el código concreto para el proyecto Flask + PostgreSQL:
+Método 1 — Pre-Deploy Command (recomendado) ✅
+
+Render permite configurar un pre-deploy command que se ejecuta justo antes de que la nueva versión del servicio entre en producción — ideal para migraciones y carga de datos. Este comando se ejecuta en una instancia separada de tu servicio en ejecución.
+Trustpilot
+Mision13
+
+Paso 1: Crea el script de inicialización en tu proyecto:
+python
+
+# scripts/init_db.py
+import os
+import sys
+
+# Agregar el directorio raíz al path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import create_app, db
+from app.models import (Usr, Rol, Permiso, UsrRol, RolPermiso,
+                        Gestion, Grado, Materia, Profesor, Curso)
+from app.utils.decorators import CATALOGO_PERMISOS, ROLES_DEFAULT
+from datetime import date, datetime
+from werkzeug.security import generate_password_hash
+
+app = create_app()
+
+with app.app_context():
+    print("→ Creando tablas...")
+    db.create_all()
+
+    # ── Permisos ──────────────────────────────────────────────
+    print("→ Creando permisos...")
+    for codigo, desc in CATALOGO_PERMISOS:
+        if not Permiso.query.filter_by(permiso=codigo).first():
+            db.session.add(Permiso(permiso=codigo, descripcion=desc,
+                                   creado=datetime.utcnow()))
+    db.session.commit()
+
+    # ── Roles ─────────────────────────────────────────────────
+    print("→ Creando roles...")
+    for nombre_rol, lista_perms in ROLES_DEFAULT.items():
+        rol = Rol.query.filter_by(rol=nombre_rol).first()
+        if not rol:
+            rol = Rol(rol=nombre_rol, descripcion=f'Rol {nombre_rol}',
+                      creado=datetime.utcnow())
+            db.session.add(rol)
+            db.session.flush()
+        RolPermiso.query.filter_by(rol_id=rol.id).delete()
+        for cod in lista_perms:
+            per = Permiso.query.filter_by(permiso=cod).first()
+            if per:
+                db.session.add(RolPermiso(rol_id=rol.id, per_id=per.id))
+    db.session.commit()
+
+    # ── Usuario admin ─────────────────────────────────────────
+    print("→ Creando usuario admin...")
+    if not Usr.query.filter_by(usuario='admin').first():
+        admin = Usr(
+            usuario='admin',
+            email='admin@escuela.edu',
+            password=generate_password_hash(
+                os.environ.get('ADMIN_PASSWORD', 'Admin1234!')
+            ),
+            activo=True,
+            last_login=date.today(),
+            creado=datetime.utcnow()
+        )
+        db.session.add(admin)
+        db.session.flush()
+        rol_a = Rol.query.filter_by(rol='Administrador').first()
+        if rol_a:
+            db.session.add(UsrRol(usr_id=admin.id, rol_id=rol_a.id))
+        db.session.commit()
+        print("   ✔ admin creado")
+    else:
+        print("   ✔ admin ya existe, se omite")
+
+    # ── Datos de prueba (solo si BD está vacía) ────────────────
+    if not Gestion.query.first():
+        print("→ Insertando datos de prueba...")
+        ges = Gestion(gestion=2025, plan='Plan Anual 2025',
+                      inicio=date(2025,2,1), fin=date(2025,11,30),
+                      activo=True, usr_id=1)
+        db.session.add(ges); db.session.flush()
+
+        gra = Grado(grado='Primero de Secundaria', nivel='Secundaria',
+                    ges_id=ges.id, usr_id=1)
+        db.session.add(gra); db.session.flush()
+
+        for m in ['Matemáticas','Lenguaje','Ciencias','Historia','Inglés']:
+            db.session.add(Materia(materia=m, gra_id=gra.id, usr_id=1))
+
+        cur = Curso(curso='1ro Secundaria', paralelo='A',
+                    gra_id=gra.id, gestion=2025, aula='Aula 101',
+                    capacidad=40, usr_id=1)
+        db.session.add(cur)
+        db.session.commit()
+        print("   ✔ datos de prueba insertados")
+
+    print("✅ Inicialización completada.")
+
+Paso 2: Crea el script de shell que Render ejecutará:
+bash
+
+# scripts/build.sh
+#!/usr/bin/env bash
+set -e   # detener si cualquier comando falla
+
+echo "=== Instalando dependencias ==="
+pip install -r requirements.txt
+
+echo "=== Ejecutando migraciones Flask-Migrate ==="
+flask db upgrade
+
+echo "=== Inicializando BD y datos base ==="
+python scripts/init_db.py
+
+echo "=== Build completado ==="
+
+Paso 3: Configurar en el Dashboard de Render:
+
+Build Command:    pip install -r requirements.txt
+Pre-Deploy Command: flask db upgrade && python scripts/init_db.py
+Start Command:    gunicorn run:app
+
+Método 2 — Build Command combinado (plan gratuito) ✅
+
+Si usas el plan gratuito de Render (que no tiene Pre-Deploy Command), combina todo en el Build Command:
+
+pip install -r requirements.txt && flask db upgrade && python scripts/init_db.py
+
+Método 3 — Script integrado al arranque de la app
+
+Agrega la inicialización directamente en run.py, ejecutándose solo si la BD está vacía:
+python
+
+# run.py
+from app import create_app, db
+
+app = create_app()
+
+def inicializar_si_necesario():
+    with app.app_context():
+        from app.models import Usr
+        try:
+            # Si no hay usuarios, inicializar
+            if not Usr.query.first():
+                import subprocess
+                subprocess.run(['python', 'scripts/init_db.py'], check=True)
+        except Exception as e:
+            print(f"BD aún no disponible o ya inicializada: {e}")
+
+inicializar_si_necesario()
+
+if __name__ == '__main__':
+    app.run(debug=False)
+
+Archivos necesarios en tu repositorio
+
+sge/
+├── render.yaml          ← configuración automática (opcional)
+├── scripts/
+│   ├── init_db.py       ← script de inicialización
+│   └── build.sh         ← script de build
+├── requirements.txt
+└── run.py
+
+El archivo render.yaml permite configurar todo el servicio como código:
+yaml
+
+# render.yaml  — Infrastructure as Code para Render
+services:
+  - type: web
+    name: sge-escolar
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: flask db upgrade && python scripts/init_db.py
+    startCommand: gunicorn run:app --workers 2 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true        # Render genera una clave aleatoria
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sge-db
+          property: connectionString
+      - key: ADMIN_PASSWORD
+        sync: false                # Se ingresa manualmente en el dashboard
+
+databases:
+  - name: sge-db
+    databaseName: dbaded1
+    user: uaded
+    plan: free
+
+Resumen de cuándo usar cada método
+Situación	Método
+Plan pagado de Render	Pre-Deploy Command (más seguro, se ejecuta antes del swap)
+Plan gratuito	Build Command combinado con &&
+Quieres la lógica en código Python	Script integrado en run.py
+Proyecto con render.yaml en el repo	preDeployCommand en el YAML
+
+El método 1 con Pre-Deploy es el más robusto porque las migraciones deben ejecutarse según si la base de datos está actualizada, no según si el código necesita ser compilado, y así se garantiza que la BD esté lista antes de que el nuevo tráfico llegue al servidor.
+Mott
+¿Quieres recibir una notificación cuando Claude responda?
+
+
