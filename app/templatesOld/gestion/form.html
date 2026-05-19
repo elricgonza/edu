@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/macros.html" import breadcrumb %}
-{% block title %}{{ 'Editar' if gestion else 'Nueva' }} Gestión — SHALOM{% endblock %}
+{% block title %}{{ 'Editar' if gestion else 'Nueva' }} Gestión — UADED{% endblock %}
 {% block page_title %}{{ 'Editar' if gestion else 'Nueva' }} Gestión Académica{% endblock %}
 {% block content %}
 {{ breadcrumb([('Inicio', '/'), ('Gestiones', url_for('gestion.index')), ('{{ "Editar" if gestion else "Nueva" }}', '#')]) }}

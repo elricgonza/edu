@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb %}
+{% block page_title %}Grados Educativos{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Grados', '#')]) }}
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-500">{{ grados|length }} grado(s)</p>
+  {% if current_user.has_permission('grado_crear') %}
+  <a href="{{ url_for('grado.nuevo') }}" class="btn-primary">+ Nuevo Grado</a>{% endif %}
+</div>
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Grado</th><th class="table-header">Nivel</th><th class="table-header">Gestión</th><th class="table-header">Acciones</th>
+  </tr></thead>
+  <tbody>
+    {% for g in grados %}<tr class="table-row">
+      <td class="table-cell font-semibold">{{ g.grado }}</td>
+      <td class="table-cell">{{ g.nivel }}</td>
+      <td class="table-cell"><span class="badge-blue">{{ g.gestion.gestion }}</span></td>
+      <td class="table-cell"><div class="flex gap-2">
+        {% if current_user.has_permission('grado_editar') %}<a href="{{ url_for('grado.editar', id=g.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+        {% if current_user.has_permission('grado_borrar') %}{{ confirm_delete(url_for('grado.eliminar', id=g.id)) }}{% endif %}
+      </div></td>
+    </tr>{% else %}<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 text-sm">Sin registros.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if usuario else 'Nuevo' }} Usuario{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Usuarios', url_for('admin.usuarios')), ('Formulario', '#')]) }}
+<div class="max-w-lg"><div class="card"><form method="POST"><div class="space-y-5">
+  <div><label class="form-label">Nombre de Usuario</label>
+  <input type="text" name="usuario" required value="{{ usuario.usuario if usuario else '' }}" {% if usuario %}readonly{% endif %} class="form-input {% if usuario %}bg-slate-50{% endif %}"></div>
+  <div><label class="form-label">Email</label><input type="email" name="email" required value="{{ usuario.email if usuario else '' }}" class="form-input"></div>
+  <div><label class="form-label">{{ 'Nueva Contraseña (dejar vacío para no cambiar)' if usuario else 'Contraseña' }}</label>
+  <input type="password" name="password" {% if not usuario %}required{% endif %} minlength="6" class="form-input" placeholder="Mínimo 6 caracteres"></div>
+  <div>
+    <label class="form-label">Roles Asignados</label>
+    <div class="space-y-2 mt-2">
+      {% for r in roles %}
+      <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-primary-300 cursor-pointer">
+        <input type="checkbox" name="roles" value="{{ r.id }}"
+               {% if usuario and r in usuario.roles %}checked{% endif %}
+               class="w-4 h-4 rounded border-slate-300 text-primary-600">
+        <div>
+          <p class="text-sm font-semibold text-slate-700">{{ r.rol }}</p>
+          {% if r.descripcion %}<p class="text-xs text-slate-500">{{ r.descripcion }}</p>{% endif %}
+        </div>
+      </label>{% endfor %}
+    </div>
+  </div>
+  {% if usuario %}
+  <div class="flex items-center gap-3">
+    <input type="checkbox" id="activo" name="activo" {% if usuario.activo %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600">
+    <label for="activo" class="text-sm font-medium text-slate-700">Usuario activo</label>
+  </div>{% endif %}
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if usuario else 'Crear Usuario' }}</button>
+  <a href="{{ url_for('admin.usuarios') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

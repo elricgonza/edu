@@ -1,0 +1,42 @@
+{% macro confirm_delete(action_url, label='¿Eliminar este registro?') %}
+<form method="POST" action="{{ action_url }}"
+      x-data="{ open: false }"
+      @submit.prevent="open=true">
+  <button type="button" @click="open=true" class="btn-danger text-xs px-3 py-1.5">Eliminar</button>
+  <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" x-transition>
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full" @click.stop>
+      <h3 class="font-heading font-bold text-slate-800 text-lg mb-2">Confirmar eliminación</h3>
+      <p class="text-slate-500 text-sm mb-6">{{ label }}</p>
+      <div class="flex gap-3 justify-end">
+        <button type="button" @click="open=false" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-danger" @click="open=false; $el.closest('form').submit()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endmacro %}
+
+{% macro breadcrumb(items) %}
+<nav class="flex items-center gap-2 text-sm text-slate-500 mb-5">
+  {% for label, url in items %}
+    {% if not loop.last %}
+      <a href="{{ url }}" class="hover:text-primary-600 transition-colors">{{ label }}</a>
+      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    {% else %}
+      <span class="text-slate-800 font-medium">{{ label }}</span>
+    {% endif %}
+  {% endfor %}
+</nav>
+{% endmacro %}
+
+{% macro search_bar(placeholder='Buscar...', param='q', value='') %}
+<form method="GET" class="flex gap-2">
+  <div class="relative flex-1">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <input type="text" name="{{ param }}" value="{{ value }}" placeholder="{{ placeholder }}"
+           class="form-input pl-10 py-2">
+  </div>
+  <button type="submit" class="btn-primary px-4">Buscar</button>
+  {% if value %}<a href="?" class="btn-secondary px-4">Limpiar</a>{% endif %}
+</form>
+{% endmacro %}

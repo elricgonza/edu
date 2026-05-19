@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}Roles del Sistema{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Roles', '#')]) }}
+<div class="flex justify-between items-center mb-5">
+  <p class="text-sm text-slate-500">{{ roles|length }} rol(es)</p>
+  <a href="{{ url_for('admin.rol_nuevo') }}" class="btn-primary">+ Nuevo Rol</a>
+</div>
+<div class="grid gap-4">
+  {% for r in roles %}
+  <div class="card">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-2">
+          <h3 class="font-heading font-bold text-slate-800">{{ r.rol }}</h3>
+          <span class="badge-blue">{{ r.permisos|length }} permisos</span>
+        </div>
+        {% if r.descripcion %}<p class="text-sm text-slate-500 mb-3">{{ r.descripcion }}</p>{% endif %}
+        <div class="flex flex-wrap gap-1.5">
+          {% for p in r.permisos %}<span class="badge-gray">{{ p.permiso }}</span>{% endfor %}
+        </div>
+      </div>
+      <a href="{{ url_for('admin.rol_editar', id=r.id) }}" class="btn-secondary text-xs px-3 py-1.5 flex-shrink-0">Editar</a>
+    </div>
+  </div>{% else %}<p class="text-center text-slate-400 py-8">Sin roles registrados.</p>{% endfor %}
+</div>
+{% endblock %}

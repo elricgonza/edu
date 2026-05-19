@@ -4,13 +4,12 @@
 {% block content %}
 {{ breadcrumb([('Inicio', '/'), ('Pagos', url_for('pago.index')), ('Registrar Pago', '#')]) }}
 <div class="max-w-lg"><div class="card">
-  <div class="rounded-xl p-4 mb-6 flex justify-between items-center border"
-       style="background: #FAE4EB; border-color: #F2BAC9;">
+  <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex justify-between items-center">
     <div>
-      <p class="font-semibold" style="color: #4A1226;">Cuota #{{ pago.nro_cuota }}</p>
-      <p class="text-sm" style="color: #7C1F3E;">Alumno: {{ pago.inscrito.alumno.nombre_completo if pago.inscrito.alumno else '-' }}</p>
+      <p class="font-semibold text-primary-800">Cuota #{{ pago.nro_cuota }}</p>
+      <p class="text-sm text-primary-600">Alumno: {{ pago.inscrito.alumno.nombre_completo if pago.inscrito.alumno else '-' }}</p>
     </div>
-    <p class="text-2xl font-heading font-bold" style="color: #631832;">Bs. {{ "%.2f"|format(pago.cuota) }}</p>
+    <p class="text-2xl font-heading font-bold text-primary-700">Bs. {{ "%.2f"|format(pago.cuota) }}</p>
   </div>
   <form method="POST"><div class="space-y-5">
     <div><label class="form-label">Método de Pago</label>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if inscrito else 'Nueva' }} Inscripción{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Inscripciones', url_for('inscrito.index')), ('Formulario', '#')]) }}
+<div class="max-w-xl"><div class="card"><form method="POST"><div class="space-y-5">
+  <div><label class="form-label">Alumno</label>
+  <select name="alu_id" required class="form-select" {% if inscrito %}disabled{% endif %}>
+    <option value="">Seleccionar alumno...</option>
+    {% for a in alumnos %}<option value="{{ a.id }}" {% if inscrito and inscrito.alu_id==a.id %}selected{% endif %}>{{ a.nombre_completo }}</option>{% endfor %}
+  </select>
+  {% if inscrito %}<input type="hidden" name="alu_id" value="{{ inscrito.alu_id }}">{% endif %}
+  </div>
+  <div><label class="form-label">Curso</label>
+  <select name="cur_id" required class="form-select"><option value="">Seleccionar curso...</option>
+    {% for c in cursos %}<option value="{{ c.id }}" {% if inscrito and inscrito.cur_id==c.id %}selected{% endif %}>{{ c.gestion }} — {{ c.curso or '' }} {{ c.paralelo }}</option>{% endfor %}
+  </select></div>
+  <div class="grid grid-cols-2 gap-4">
+    <div><label class="form-label">% Descuento</label><input type="number" name="descuento" min="0" max="100" value="{{ inscrito.descuento if inscrito else 0 }}" class="form-input"></div>
+    <div><label class="form-label">Motivo Descuento</label><input type="text" name="motivo_descuento" value="{{ inscrito.motivo_descuento if inscrito else '' }}" class="form-input"></div>
+  </div>
+  <div class="flex gap-6">
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <input type="checkbox" name="reserva" {% if inscrito and inscrito.reserva %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600"> Reserva
+    </label>
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <input type="checkbox" name="inscrito" {% if not inscrito or inscrito.inscrito %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600"> Inscrito
+    </label>
+    {% if inscrito %}
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <input type="checkbox" name="abandono" {% if inscrito and inscrito.abandono %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-red-500"> Abandono
+    </label>{% endif %}
+  </div>
+  <div><label class="form-label">Observaciones</label><input type="text" name="obs" value="{{ inscrito.obs if inscrito else '' }}" class="form-input"></div>
+  {% if not inscrito %}
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
+    <strong>Nota:</strong> Al confirmar la inscripción, se generará automáticamente el plan de pagos según el costo del curso.
+  </div>{% endif %}
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if inscrito else 'Inscribir' }}</button>
+  <a href="{{ url_for('inscrito.index') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

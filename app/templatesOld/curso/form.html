@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if curso else 'Nuevo' }} Curso{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Cursos', url_for('curso.index')), ('Formulario', '#')]) }}
+<div class="max-w-xl"><div class="card"><form method="POST"><div class="space-y-5">
+  <div><label class="form-label">Nombre del Curso</label><input type="text" name="curso" value="{{ curso.curso if curso else '' }}" class="form-input" placeholder="Ej: Matemáticas Avanzadas"></div>
+  <div class="grid grid-cols-2 gap-4">
+    <div><label class="form-label">Paralelo</label><input type="text" name="paralelo" required value="{{ curso.paralelo if curso else '' }}" class="form-input" placeholder="Ej: A"></div>
+    <div><label class="form-label">Gestión (Año)</label><input type="number" name="gestion" required value="{{ curso.gestion if curso else '' }}" class="form-input" placeholder="2025"></div>
+  </div>
+  <div><label class="form-label">Grado</label>
+  <select name="gra_id" required class="form-select"><option value="">Seleccionar...</option>
+    {% for g in grados %}<option value="{{ g.id }}" {% if curso and curso.gra_id==g.id %}selected{% endif %}>{{ g.grado }} ({{ g.nivel }})</option>{% endfor %}
+  </select></div>
+  <div class="grid grid-cols-2 gap-4">
+    <div><label class="form-label">Aula</label><input type="text" name="aula" value="{{ curso.aula if curso else '' }}" class="form-input" placeholder="Ej: 101"></div>
+    <div><label class="form-label">Capacidad</label><input type="number" name="capacidad" value="{{ curso.capacidad if curso else '' }}" class="form-input" placeholder="30"></div>
+  </div>
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if curso else 'Crear' }}</button>
+  <a href="{{ url_for('curso.index') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}
