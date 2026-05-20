@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}Calificaciones{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Calificaciones', '#')]) }}
+<div class="card mb-5">
+  <form method="GET" class="flex gap-4 items-end">
+    <div class="flex-1"><label class="form-label">Filtrar por Curso</label>
+    <select name="cur_id" class="form-select">
+      <option value="">Todos los cursos</option>
+      {% for c in cursos %}<option value="{{ c.id }}" {% if cur_id==c.id %}selected{% endif %}>{{ c.gestion }} — {{ c.curso or '' }} {{ c.paralelo }}</option>{% endfor %}
+    </select></div>
+    <button type="submit" class="btn-primary">Filtrar</button>
+    {% if current_user.has_permission('nota_crear') %}
+    <a href="{{ url_for('nota.nueva') }}" class="btn-success">+ Nueva Nota</a>{% endif %}
+  </form>
+</div>
+<div class="card p-0 overflow-hidden"><table class="w-full">
+  <thead class="bg-slate-50"><tr>
+    <th class="table-header">Alumno</th><th class="table-header">Materia</th><th class="table-header">N1</th><th class="table-header">N2</th><th class="table-header">N3</th><th class="table-header">Final</th><th class="table-header">Estado</th><th class="table-header">Acciones</th>
+  </tr></thead>
+  <tbody>
+    {% for n in notas %}<tr class="table-row">
+      <td class="table-cell font-semibold">{{ n.inscrito.alumno.nombre_completo if n.inscrito.alumno else '-' }}</td>
+      <td class="table-cell">{{ n.materia.materia }}</td>
+      <td class="table-cell text-center">{{ n.nota1 }}</td>
+      <td class="table-cell text-center">{{ n.nota2 }}</td>
+      <td class="table-cell text-center">{{ n.nota3 }}</td>
+      <td class="table-cell text-center font-bold {% if n.aprobado %}text-emerald-700{% else %}text-red-600{% endif %}">{{ n.nota_final }}</td>
+      <td class="table-cell">{% if n.aprobado %}<span class="badge-green">Aprobado</span>{% else %}<span class="badge-red">Reprobado</span>{% endif %}</td>
+      <td class="table-cell">{% if current_user.has_permission('nota_editar') %}<a href="{{ url_for('nota.editar', id=n.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Sin calificaciones. Seleccione un curso o registre una nota.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

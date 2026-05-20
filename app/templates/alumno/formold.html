@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if alumno else 'Nuevo' }} Alumno{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Alumnos', url_for('alumno.index')), ('Formulario', '#')]) }}
+<div class="max-w-2xl"><div class="card"><form method="POST"><div class="space-y-5">
+  <div class="grid grid-cols-3 gap-4">
+    <div><label class="form-label">Nombre(s)</label><input type="text" name="nombre" required value="{{ alumno.nombre if alumno else '' }}" class="form-input"></div>
+    <div><label class="form-label">Ap. Paterno</label><input type="text" name="paterno" value="{{ alumno.paterno if alumno else '' }}" class="form-input"></div>
+    <div><label class="form-label">Ap. Materno</label><input type="text" name="materno" value="{{ alumno.materno if alumno else '' }}" class="form-input"></div>
+  </div>
+  <div class="grid grid-cols-3 gap-4">
+    <div><label class="form-label">Fecha Nacimiento</label><input type="date" name="nacimiento" value="{{ alumno.nacimiento.isoformat() if alumno and alumno.nacimiento else '' }}" class="form-input"></div>
+    <div><label class="form-label">Género</label>
+    <select name="genero" required class="form-select">
+      <option value="M" {% if not alumno or alumno.masculino %}selected{% endif %}>Masculino</option>
+      <option value="F" {% if alumno and not alumno.masculino %}selected{% endif %}>Femenino</option>
+    </select></div>
+    <div><label class="form-label">Carnet de Identidad</label><input type="number" name="ci" value="{{ alumno.ci if alumno else '' }}" class="form-input"></div>
+  </div>
+  <div><label class="form-label">Dirección</label><input type="text" name="direccion" value="{{ alumno.direccion if alumno else '' }}" class="form-input"></div>
+  <div><label class="form-label">Email</label><input type="email" name="email" value="{{ alumno.email if alumno else '' }}" class="form-input"></div>
+  <div><label class="form-label">Observaciones</label><input type="text" name="obs" value="{{ alumno.obs if alumno else '' }}" class="form-input"></div>
+  <div class="flex items-center gap-3">
+    <input type="checkbox" id="activo" name="activo" {% if not alumno or alumno.activo %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600">
+    <label for="activo" class="text-sm font-medium text-slate-700">Alumno activo</label>
+  </div>
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if alumno else 'Registrar' }}</button>
+  <a href="{{ url_for('alumno.index') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

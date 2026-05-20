@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb, search_bar %}
+
+{% block page_title %}Alumnos{% endblock %}
+
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Alumnos', '#')]) }}
+
+<div class="bg-white rounded-2xl shadow-sm p-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-800">Alumnos</h1>
+            <p class="text-gray-500">{{ alumnos|length }} registros</p>
+        </div>
+        {% if current_user.has_permission('alumno_crear') %}
+        <a href="{{ url_for('alumno.nuevo') }}" 
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo Alumno
+        </a>
+        {% endif %}
+    </div>
+
+    {{ search_bar('Buscar por nombre, CI o email...', 'q', q) }}
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b bg-gray-50">
+                    <th class="text-left py-4 px-6 font-medium text-gray-600">Alumno</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-600">CI</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-600">Email</th>
+                    <th class="text-center py-4 px-6 font-medium text-gray-600">Estado</th>
+                    <th class="text-right py-4 px-6 font-medium text-gray-600">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for a in alumnos %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-semibold">
+                                {{ a.nombre[0] }}
+                            </div>
+                            <div>
+                                <p class="font-medium">{{ a.nombre_completo }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-gray-600">{{ a.ci or '-' }}</td>
+                    <td class="py-4 px-6 text-gray-600">{{ a.email or '-' }}</td>
+                    <td class="py-4 px-6 text-center">
+                        <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full {{ 'bg-green-100 text-green-700' if a.activo else 'bg-red-100 text-red-700' }}">
+                            {{ 'Activo' if a.activo else 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-right space-x-2">
+                        {% if current_user.has_permission('alumno_editar') %}
+                        <a href="{{ url_for('alumno.editar', id=a.id) }}" class="text-indigo-600 hover:text-indigo-800">
+                            ✏️ Editar
+                        </a>
+                        {% endif %}
+                        {% if current_user.has_permission('alumno_borrar') %}
+                        {{ confirm_delete(url_for('alumno.eliminar', id=a.id), '¿Eliminar a ' ~ a.nombre_completo ~ '?') }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="py-12 text-center text-gray-500">No se encontraron alumnos</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

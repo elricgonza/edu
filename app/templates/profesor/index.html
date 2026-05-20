@@ -1,29 +1,39 @@
 {% extends "base.html" %}
-{% from "partials/macros.html" import confirm_delete, breadcrumb %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb, table_toolbar %}
 {% block page_title %}Profesores{% endblock %}
 {% block content %}
 {{ breadcrumb([('Inicio', '/'), ('Profesores', '#')]) }}
-<div class="flex justify-between items-center mb-5">
-  <p class="text-sm text-slate-500">{{ profesores|length }} profesor(es)</p>
-  {% if current_user.has_permission('profesor_crear') %}
-  <a href="{{ url_for('profesor.nuevo') }}" class="btn-primary">+ Nuevo Profesor</a>{% endif %}
-</div>
-<div class="card p-0 overflow-hidden"><table class="w-full">
-  <thead class="bg-slate-50"><tr>
-    <th class="table-header">Nombre</th><th class="table-header">CI</th><th class="table-header">Formación</th><th class="table-header">Email</th><th class="table-header">Estado</th><th class="table-header">Acciones</th>
-  </tr></thead>
-  <tbody>
-    {% for p in profesores %}<tr class="table-row">
-      <td class="table-cell font-semibold">{{ p.nombre_completo }}</td>
-      <td class="table-cell">{{ p.ci or '-' }}</td>
-      <td class="table-cell">{{ p.formacion or '-' }}</td>
-      <td class="table-cell">{{ p.email or '-' }}</td>
-      <td class="table-cell">{% if p.activo %}<span class="badge-green">Activo</span>{% else %}<span class="badge-gray">Inactivo</span>{% endif %}</td>
-      <td class="table-cell"><div class="flex gap-2">
-        {% if current_user.has_permission('profesor_editar') %}<a href="{{ url_for('profesor.editar', id=p.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+{{ table_toolbar(profesores|length,'Nuevo Profesor',url_for('profesor.nuevo'),current_user.has_permission('profesor_crear'),'Buscar profesor...','q',q|default('')) }}
+<div class="card p-0 overflow-hidden">
+  <div style="background:linear-gradient(135deg,#7C1F3E,#5C1530);"><table class="w-full"><thead><tr>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider"><div class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Nombre</div></th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">C.I.</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Formación</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Email</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Estado</th>
+    <th class="px-4 py-3 text-center text-xs font-bold text-white/80 uppercase tracking-wider">Acciones</th>
+  </tr></thead></table></div>
+  <table class="w-full"><tbody>
+    {% for p in profesores %}
+    <tr class="border-t border-slate-100 hover:bg-primary-50/40 transition-colors">
+      <td class="px-4 py-3"><div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 text-white" style="background:linear-gradient(135deg,#7C1F3E,#5C1530);">{{ p.nombre[0] if p.nombre else '?' }}</div>
+        <div><p class="text-sm font-semibold text-slate-800">{{ p.nombre_completo }}</p></div>
+      </div></td>
+      <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ p.ci or '—' }}</td>
+      <td class="px-4 py-3 text-sm text-slate-600">{{ p.formacion or '—' }}</td>
+      <td class="px-4 py-3 text-sm text-slate-500">{{ p.email or '—' }}</td>
+      <td class="px-4 py-3">
+        {% if p.activo %}<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Activo</span>
+        {% else %}<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Inactivo</span>{% endif %}
+      </td>
+      <td class="px-4 py-3"><div class="flex items-center justify-center gap-2">
+        {% if current_user.has_permission('profesor_editar') %}
+        <a href="{{ url_for('profesor.editar', id=p.id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Editar</a>{% endif %}
         {% if current_user.has_permission('profesor_borrar') %}{{ confirm_delete(url_for('profesor.eliminar', id=p.id)) }}{% endif %}
       </div></td>
-    </tr>{% else %}<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Sin registros.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
+    </tr>
+    {% else %}<tr><td colspan="6" class="px-4 py-14 text-center"><div class="flex flex-col items-center gap-3 text-slate-400"><svg class="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><p class="text-sm font-medium">Sin profesores registrados</p></div></td></tr>{% endfor %}
+  </tbody></table>
+</div>
 {% endblock %}

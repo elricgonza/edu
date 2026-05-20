@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import breadcrumb %}
+{% block page_title %}{{ 'Editar' if grado else 'Nuevo' }} Grado{% endblock %}
+{% block content %}
+{{ breadcrumb([('Inicio', '/'), ('Grados', url_for('grado.index')), ('Formulario', '#')]) }}
+<div class="max-w-lg"><div class="card"><form method="POST"><div class="space-y-5">
+  <div><label class="form-label">Nombre del Grado</label>
+  <input type="text" name="grado" required value="{{ grado.grado if grado else '' }}" class="form-input" placeholder="Ej: Primero de Secundaria"></div>
+  <div><label class="form-label">Nivel</label>
+  <input type="text" name="nivel" required value="{{ grado.nivel if grado else '' }}" class="form-input" placeholder="Ej: Secundaria"></div>
+  <div><label class="form-label">Gestión</label>
+  <select name="ges_id" required class="form-select"><option value="">Seleccionar gestión...</option>
+    {% for gs in gestiones %}<option value="{{ gs.id }}" {% if grado and grado.ges_id==gs.id %}selected{% endif %}>{{ gs.gestion }} — {{ gs.plan }}</option>{% endfor %}
+  </select></div>
+</div><div class="flex gap-3 mt-8">
+  <button type="submit" class="btn-primary">{{ 'Guardar' if grado else 'Crear' }}</button>
+  <a href="{{ url_for('grado.index') }}" class="btn-secondary">Cancelar</a>
+</div></form></div></div>
+{% endblock %}

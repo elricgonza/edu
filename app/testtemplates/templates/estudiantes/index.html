@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema Escolar — Estudiantes</title>
+<link rel="stylesheet" href="../assets/style.css">
+
+    <style>
+      .nav-item[data-page="estudiantes"] { background:rgba(79,142,247,.15);color:#fff;border-left:3px solid var(--accent); }
+    </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎓</div>
+      <span>Sistema<br>Escolar</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <div class="nav-section-title">Administración</div>
+      <a class="nav-item" href="../gestions/index.html" data-page="gestions"><span class="nav-icon">📅</span> Gestiones</a>
+      <a class="nav-item" href="../grados/index.html" data-page="grados"><span class="nav-icon">🏆</span> Grados</a>
+      <a class="nav-item" href="../materias/index.html" data-page="materias"><span class="nav-icon">📚</span> Materias</a>
+      <a class="nav-item" href="../profesores/index.html" data-page="profesores"><span class="nav-icon">👨‍🏫</span> Profesores</a>
+      <a class="nav-item" href="../cursos/index.html" data-page="cursos"><span class="nav-icon">🏫</span> Cursos</a>
+      <div class="nav-section-title">Alumnos</div>
+      <a class="nav-item" href="../estudiantes/index.html" data-page="estudiantes"><span class="nav-icon">🧑‍🎓</span> Estudiantes</a>
+      <a class="nav-item" href="../inscripciones/index.html" data-page="inscripciones"><span class="nav-icon">📝</span> Inscripciones</a>
+      <a class="nav-item" href="../calificaciones/index.html" data-page="calificaciones"><span class="nav-icon">⭐</span> Calificaciones</a>
+      <div class="nav-section-title">Finanzas y Acceso</div>
+      <a class="nav-item" href="../pagos/index.html" data-page="pagos"><span class="nav-icon">💳</span> Pagos</a>
+      <a class="nav-item" href="../usuarios/index.html" data-page="usuarios"><span class="nav-icon">👤</span> Usuarios</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Administrador</div>
+        <div class="user-role">Super Admin</div>
+      </div>
+    </div>
+  </aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🧑‍🎓 Estudiantes</div>
+      <div class="topbar-subtitle">Gestión de estudiantes</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-badge">📅 Gestión 2025</div>
+      <button class="btn btn-primary" onclick="openModal('modalAdd')">➕ Nuevo Estudiant</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon green">🧑‍🎓</div><div><div class="stat-value">1,248</div><div class="stat-label">Estudiantes Activos</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">♂</div><div><div class="stat-value">632</div><div class="stat-label">Varones</div></div></div>
+    <div class="stat-card"><div class="stat-icon amber">♀</div><div><div class="stat-value">616</div><div class="stat-label">Mujeres</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">⚠️</div><div><div class="stat-value">24</div><div class="stat-label">Retirados</div></div></div>
+  </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">🧑‍🎓</div>
+        <span class="card-title">Listado de Estudiantes</span>
+        <span id="totalCount" class="badge badge-blue" style="margin-left:auto">Cargando…</span>
+      </div>
+
+      <!-- Toolbar búsqueda + filtros -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar estudiantes…" oninput="liveSearch()">
+        </div>
+        
+    <select class="filter-select">
+      <option value="">Grado</option>
+      <option value="primaria">Primaria</option>
+      <option value="secundaria">Secundaria</option>
+    </select>
+    <select class="filter-select">
+      <option value="">Género</option>
+      <option value="masculino">Masculino</option>
+      <option value="femenino">Femenino</option>
+    </select>
+    <select class="filter-select">
+      <option value="">Estado</option>
+      <option value="activo">Activo</option>
+      <option value="retirado">Retirado</option>
+    </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">🔄 Limpiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Exportar</button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrap">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th data-sort="0">#</th><th data-sort="1">Nombre Completo</th><th>CI</th><th>Curso</th><th>Tutor</th><th class="center">Género</th><th class="center">Estado</th>
+              <th class="center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+    <tr><td>1</td><td><div class="avatar-chip"><div class="avatar-sm">AP</div><div><div class="avatar-name">Ana Pérez Quispe</div><div class="avatar-sub">Nac: 12/03/2013</div></div></div></td><td>6001234</td><td>1°A Primaria</td><td>Rosa Quispe</td><td class="center"><span class="badge badge-cyan">♀ F</span></td><td class="center"><span class="badge badge-green">✅ Activo</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver estudiante','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>2</td><td><div class="avatar-chip"><div class="avatar-sm" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6)">LM</div><div><div class="avatar-name">Luis Mamani Flores</div><div class="avatar-sub">Nac: 05/07/2012</div></div></div></td><td>6005678</td><td>2°B Primaria</td><td>Carlos Mamani</td><td class="center"><span class="badge badge-blue">♂ M</span></td><td class="center"><span class="badge badge-green">✅ Activo</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver estudiante','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>3</td><td><div class="avatar-chip"><div class="avatar-sm" style="background:linear-gradient(135deg,#f43f5e,#f59e0b)">SC</div><div><div class="avatar-name">Sofia Condori Vila</div><div class="avatar-sub">Nac: 20/11/2011</div></div></div></td><td>6009012</td><td>3°A Secundaria</td><td>Elena Vila</td><td class="center"><span class="badge badge-cyan">♀ F</span></td><td class="center"><span class="badge badge-red">🚫 Retirado</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver estudiante','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn restore" onclick="showToast('Estudiante reactivado','success')">🔄</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="pagination">
+        <span id="paginInfo">Mostrando 1–10 de <strong id="totalRows">0</strong> registros</span>
+        <div class="page-btns">
+          <button class="page-btn" onclick="changePage(-1)">‹</button>
+          <button class="page-btn active" id="pgCurrent">1</button>
+          <button class="page-btn" onclick="changePage(1)">›</button>
+        </div>
+      </div>
+    </div><!-- /card -->
+  </div><!-- /page-content -->
+</main>
+
+
+  <div class="modal-overlay" id="modalAdd">
+    <div class="modal" style="max-width:720px">
+      <div class="modal-header">
+        <div class="modal-icon">🧑‍🎓</div>
+        <span class="modal-title">Nuevo Estudiante</span>
+        <button class="modal-close" onclick="closeModal('modalAdd')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full"><div class="form-section-title">👤 Datos Personales</div></div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏷️</span> Nombre(s)</label>
+            <input class="form-control" type="text" placeholder="Ana">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏷️</span> Primer Apellido</label>
+            <input class="form-control" type="text" placeholder="Pérez">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏷️</span> Segundo Apellido</label>
+            <input class="form-control" type="text" placeholder="Quispe">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🪪</span> CI</label>
+            <input class="form-control" type="text" placeholder="6001234">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📅</span> Fecha de Nacimiento</label>
+            <input class="form-control" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">⚧️</span> Género</label>
+            <select class="form-control"><option>Femenino</option><option>Masculino</option><option>Otro</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🌍</span> Lugar de Nacimiento</label>
+            <input class="form-control" type="text" placeholder="La Paz">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏠</span> Dirección</label>
+            <input class="form-control" type="text" placeholder="Av. Principal 123">
+          </div>
+          <hr class="form-divider">
+          <div class="form-group full"><div class="form-section-title">🏫 Datos Académicos</div></div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏫</span> Curso</label>
+            <select class="form-control"><option>1°A Primaria</option><option>1°B Primaria</option><option>2°A Secundaria</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">✅</span> Estado</label>
+            <select class="form-control"><option>Activo</option><option>Retirado</option></select>
+          </div>
+          <hr class="form-divider">
+          <div class="form-group full"><div class="form-section-title">👨‍👩‍👧 Datos del Tutor</div></div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">👤</span> Nombre del Tutor</label>
+            <input class="form-control" type="text" placeholder="Rosa Quispe">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🔗</span> Parentesco</label>
+            <select class="form-control"><option>Madre</option><option>Padre</option><option>Tutor Legal</option><option>Abuelo/a</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📞</span> Teléfono Tutor</label>
+            <input class="form-control" type="tel" placeholder="71234567">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modalAdd')">❌ Cancelar</button>
+        <button class="btn btn-success" onclick="closeModal('modalAdd');showToast('Estudiante registrado exitosamente','success')">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script src="../assets/shared.js"></script>
+<script>
+// Count visible rows and update badge
+function updateCount() {
+  const rows = document.querySelectorAll('#mainTable tbody tr:not([style*="none"])');
+  document.getElementById('totalCount').textContent = rows.length + ' registros';
+  document.getElementById('totalRows').textContent = rows.length;
+}
+
+function liveSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+  updateCount();
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.filter-select').forEach(s => s.value = '');
+  document.querySelectorAll('#mainTable tbody tr').forEach(r => r.style.display = '');
+  updateCount();
+}
+
+function exportCSV() {
+  const rows = Array.from(document.querySelectorAll('#mainTable tr'));
+  const csv = rows.map(r => Array.from(r.cells).map(c => '"'+c.textContent.trim().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'estudiantes.csv';
+  a.click();
+  showToast('Archivo CSV exportado correctamente', 'success');
+}
+
+let currentPage = 1;
+function changePage(dir) {
+  currentPage = Math.max(1, currentPage + dir);
+  document.getElementById('pgCurrent').textContent = currentPage;
+}
+
+function delRow(btn) {
+  confirmAction('¿Desea eliminar este registro?', () => {
+    btn.closest('tr').remove();
+    updateCount();
+    showToast('Registro eliminado', 'danger');
+  });
+}
+
+// Apply select filters
+document.querySelectorAll('.filter-select').forEach(sel => {
+  sel.addEventListener('change', () => {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+      let show = row.textContent.toLowerCase().includes(q);
+      document.querySelectorAll('.filter-select').forEach(s => {
+        if (s.value && show) show = row.textContent.toLowerCase().includes(s.value.toLowerCase());
+      });
+      row.style.display = show ? '' : 'none';
+    });
+    updateCount();
+  });
+});
+
+makeSortable('mainTable');
+updateCount();
+</script>
+</body>
+</html>

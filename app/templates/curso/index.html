@@ -1,29 +1,33 @@
 {% extends "base.html" %}
-{% from "partials/macros.html" import confirm_delete, breadcrumb %}
+{% from "partials/macros.html" import confirm_delete, breadcrumb, table_toolbar %}
 {% block page_title %}Cursos{% endblock %}
 {% block content %}
 {{ breadcrumb([('Inicio', '/'), ('Cursos', '#')]) }}
-<div class="flex justify-between items-center mb-5">
-  <p class="text-sm text-slate-500">{{ cursos|length }} curso(s)</p>
-  {% if current_user.has_permission('curso_crear') %}
-  <a href="{{ url_for('curso.nuevo') }}" class="btn-primary">+ Nuevo Curso</a>{% endif %}
-</div>
-<div class="card p-0 overflow-hidden"><table class="w-full">
-  <thead class="bg-slate-50"><tr>
-    <th class="table-header">Curso</th><th class="table-header">Paralelo</th><th class="table-header">Grado</th><th class="table-header">Aula</th><th class="table-header">Gestión</th><th class="table-header">Acciones</th>
-  </tr></thead>
-  <tbody>
-    {% for c in cursos %}<tr class="table-row">
-      <td class="table-cell font-semibold">{{ c.curso or '-' }}</td>
-      <td class="table-cell">{{ c.paralelo }}</td>
-      <td class="table-cell">{{ c.grado.grado }}</td>
-      <td class="table-cell">{{ c.aula or '-' }}</td>
-      <td class="table-cell"><span class="badge-blue">{{ c.gestion }}</span></td>
-      <td class="table-cell"><div class="flex gap-2">
-        {% if current_user.has_permission('curso_editar') %}<a href="{{ url_for('curso.editar', id=c.id) }}" class="btn-secondary text-xs px-3 py-1.5">Editar</a>{% endif %}
+{{ table_toolbar(cursos|length,'Nuevo Curso',url_for('curso.nuevo'),current_user.has_permission('curso_crear'),'Buscar curso...','q',q|default('')) }}
+<div class="card p-0 overflow-hidden">
+  <div style="background:linear-gradient(135deg,#7C1F3E,#5C1530);"><table class="w-full"><thead><tr>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Curso</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Paralelo</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Grado</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Aula</th>
+    <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Gestión</th>
+    <th class="px-4 py-3 text-center text-xs font-bold text-white/80 uppercase tracking-wider">Acciones</th>
+  </tr></thead></table></div>
+  <table class="w-full"><tbody>
+    {% for c in cursos %}
+    <tr class="border-t border-slate-100 hover:bg-primary-50/40 transition-colors">
+      <td class="px-4 py-3 text-sm font-semibold text-slate-800">{{ c.curso or '—' }}</td>
+      <td class="px-4 py-3"><span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">{{ c.paralelo }}</span></td>
+      <td class="px-4 py-3 text-sm text-slate-600">{{ c.grado.grado }}</td>
+      <td class="px-4 py-3 text-sm text-slate-500">{{ c.aula or '—' }}</td>
+      <td class="px-4 py-3"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold" style="background:#FAE4EB;color:#7C1F3E;">{{ c.gestion }}</span></td>
+      <td class="px-4 py-3"><div class="flex items-center justify-center gap-2">
+        {% if current_user.has_permission('curso_editar') %}
+        <a href="{{ url_for('curso.editar', id=c.id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Editar</a>{% endif %}
         {% if current_user.has_permission('curso_borrar') %}{{ confirm_delete(url_for('curso.eliminar', id=c.id)) }}{% endif %}
       </div></td>
-    </tr>{% else %}<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Sin registros.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
+    </tr>
+    {% else %}<tr><td colspan="6" class="px-4 py-14 text-center"><div class="flex flex-col items-center gap-3 text-slate-400"><svg class="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><p class="text-sm font-medium">Sin cursos registrados</p></div></td></tr>{% endfor %}
+  </tbody></table>
+</div>
 {% endblock %}

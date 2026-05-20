@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema Escolar — Calificaciones</title>
+<link rel="stylesheet" href="../assets/style.css">
+
+    <style>
+      .nav-item[data-page="calificaciones"] { background:rgba(79,142,247,.15);color:#fff;border-left:3px solid var(--accent); }
+    </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎓</div>
+      <span>Sistema<br>Escolar</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <div class="nav-section-title">Administración</div>
+      <a class="nav-item" href="../gestions/index.html" data-page="gestions"><span class="nav-icon">📅</span> Gestiones</a>
+      <a class="nav-item" href="../grados/index.html" data-page="grados"><span class="nav-icon">🏆</span> Grados</a>
+      <a class="nav-item" href="../materias/index.html" data-page="materias"><span class="nav-icon">📚</span> Materias</a>
+      <a class="nav-item" href="../profesores/index.html" data-page="profesores"><span class="nav-icon">👨‍🏫</span> Profesores</a>
+      <a class="nav-item" href="../cursos/index.html" data-page="cursos"><span class="nav-icon">🏫</span> Cursos</a>
+      <div class="nav-section-title">Alumnos</div>
+      <a class="nav-item" href="../estudiantes/index.html" data-page="estudiantes"><span class="nav-icon">🧑‍🎓</span> Estudiantes</a>
+      <a class="nav-item" href="../inscripciones/index.html" data-page="inscripciones"><span class="nav-icon">📝</span> Inscripciones</a>
+      <a class="nav-item" href="../calificaciones/index.html" data-page="calificaciones"><span class="nav-icon">⭐</span> Calificaciones</a>
+      <div class="nav-section-title">Finanzas y Acceso</div>
+      <a class="nav-item" href="../pagos/index.html" data-page="pagos"><span class="nav-icon">💳</span> Pagos</a>
+      <a class="nav-item" href="../usuarios/index.html" data-page="usuarios"><span class="nav-icon">👤</span> Usuarios</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Administrador</div>
+        <div class="user-role">Super Admin</div>
+      </div>
+    </div>
+  </aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">⭐ Calificaciones</div>
+      <div class="topbar-subtitle">Gestión de calificaciones</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-badge">📅 Gestión 2025</div>
+      <button class="btn btn-primary" onclick="openModal('modalAdd')">➕ Nuevo Calificacion</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon amber">⭐</div><div><div class="stat-value">4,820</div><div class="stat-label">Notas Registradas</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">📊</div><div><div class="stat-value">72.4</div><div class="stat-label">Promedio General</div></div></div>
+    <div class="stat-card"><div class="stat-icon blue">✅</div><div><div class="stat-value">4,210</div><div class="stat-label">Aprobados</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">❌</div><div><div class="stat-value">610</div><div class="stat-label">Reprobados</div></div></div>
+  </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">⭐</div>
+        <span class="card-title">Listado de Calificaciones</span>
+        <span id="totalCount" class="badge badge-blue" style="margin-left:auto">Cargando…</span>
+      </div>
+
+      <!-- Toolbar búsqueda + filtros -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar calificaciones…" oninput="liveSearch()">
+        </div>
+        
+    <select class="filter-select">
+      <option value="">Materia</option>
+      <option value="matemáticas">Matemáticas</option>
+      <option value="lenguaje">Lenguaje</option>
+      <option value="ciencias">Ciencias</option>
+    </select>
+    <select class="filter-select">
+      <option value="">Periodo</option>
+      <option value="1er trimestre">1er Trimestre</option>
+      <option value="2do trimestre">2do Trimestre</option>
+      <option value="3er trimestre">3er Trimestre</option>
+    </select>
+    <select class="filter-select">
+      <option value="">Curso</option>
+      <option value="1°A">1°A</option>
+      <option value="1°B">1°B</option>
+      <option value="2°A">2°A</option>
+    </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">🔄 Limpiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Exportar</button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrap">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th data-sort="0">#</th><th data-sort="1">Estudiante</th><th>Materia</th><th>Curso</th><th>Periodo</th><th class="center">Nota</th><th class="center">Estado</th>
+              <th class="center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+    <tr><td>1</td><td>🧑‍🎓 Ana Pérez</td><td>📚 Matemáticas</td><td>1°A Primaria</td><td>1er Trimestre</td><td class="center"><span class="badge badge-green fw-bold">85</span></td><td class="center"><span class="badge badge-green">✅ Aprobado</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver calificación','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>2</td><td>🧑‍🎓 Luis Mamani</td><td>📚 Lenguaje</td><td>2°B Primaria</td><td>1er Trimestre</td><td class="center"><span class="badge badge-amber fw-bold">51</span></td><td class="center"><span class="badge badge-red">❌ Reprobado</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver calificación','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>3</td><td>🧑‍🎓 Sofia Condori</td><td>📚 Ciencias</td><td>3°A Secundaria</td><td>2do Trimestre</td><td class="center"><span class="badge badge-green fw-bold">92</span></td><td class="center"><span class="badge badge-green">✅ Aprobado</span></td><td class="center"><div class="action-group"><button class="action-btn view" onclick="showToast('Ver calificación','info')">👁️</button><button class="action-btn edit" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" onclick="delRow(this)">🗑️</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="pagination">
+        <span id="paginInfo">Mostrando 1–10 de <strong id="totalRows">0</strong> registros</span>
+        <div class="page-btns">
+          <button class="page-btn" onclick="changePage(-1)">‹</button>
+          <button class="page-btn active" id="pgCurrent">1</button>
+          <button class="page-btn" onclick="changePage(1)">›</button>
+        </div>
+      </div>
+    </div><!-- /card -->
+  </div><!-- /page-content -->
+</main>
+
+
+  <div class="modal-overlay" id="modalAdd">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">⭐</div>
+        <span class="modal-title">Registrar Calificación</span>
+        <button class="modal-close" onclick="closeModal('modalAdd')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full"><div class="form-section-title">⭐ Datos de la Calificación</div></div>
+          <div class="form-group full">
+            <label class="form-label"><span class="label-icon">🧑‍🎓</span> Estudiante</label>
+            <select class="form-control"><option>Ana Pérez Quispe</option><option>Luis Mamani</option><option>Sofia Condori</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📚</span> Materia</label>
+            <select class="form-control"><option>Matemáticas</option><option>Lenguaje</option><option>Ciencias</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🏫</span> Curso</label>
+            <select class="form-control"><option>1°A Primaria</option><option>1°B Primaria</option><option>2°A Secundaria</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📅</span> Periodo</label>
+            <select class="form-control"><option>1er Trimestre</option><option>2do Trimestre</option><option>3er Trimestre</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">⭐</span> Nota (0–100)</label>
+            <input class="form-control" type="number" placeholder="85" min="0" max="100">
+            <div class="form-hint">Mínimo aprobatorio: 51 puntos</div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label"><span class="label-icon">📝</span> Observaciones</label>
+            <textarea class="form-control" placeholder="Observaciones adicionales…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modalAdd')">❌ Cancelar</button>
+        <button class="btn btn-success" onclick="closeModal('modalAdd');showToast('Calificación registrada','success')">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script src="../assets/shared.js"></script>
+<script>
+// Count visible rows and update badge
+function updateCount() {
+  const rows = document.querySelectorAll('#mainTable tbody tr:not([style*="none"])');
+  document.getElementById('totalCount').textContent = rows.length + ' registros';
+  document.getElementById('totalRows').textContent = rows.length;
+}
+
+function liveSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+  updateCount();
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.filter-select').forEach(s => s.value = '');
+  document.querySelectorAll('#mainTable tbody tr').forEach(r => r.style.display = '');
+  updateCount();
+}
+
+function exportCSV() {
+  const rows = Array.from(document.querySelectorAll('#mainTable tr'));
+  const csv = rows.map(r => Array.from(r.cells).map(c => '"'+c.textContent.trim().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'calificaciones.csv';
+  a.click();
+  showToast('Archivo CSV exportado correctamente', 'success');
+}
+
+let currentPage = 1;
+function changePage(dir) {
+  currentPage = Math.max(1, currentPage + dir);
+  document.getElementById('pgCurrent').textContent = currentPage;
+}
+
+function delRow(btn) {
+  confirmAction('¿Desea eliminar este registro?', () => {
+    btn.closest('tr').remove();
+    updateCount();
+    showToast('Registro eliminado', 'danger');
+  });
+}
+
+// Apply select filters
+document.querySelectorAll('.filter-select').forEach(sel => {
+  sel.addEventListener('change', () => {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+      let show = row.textContent.toLowerCase().includes(q);
+      document.querySelectorAll('.filter-select').forEach(s => {
+        if (s.value && show) show = row.textContent.toLowerCase().includes(s.value.toLowerCase());
+      });
+      row.style.display = show ? '' : 'none';
+    });
+    updateCount();
+  });
+});
+
+makeSortable('mainTable');
+updateCount();
+</script>
+</body>
+</html>

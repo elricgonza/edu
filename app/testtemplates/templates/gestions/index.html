@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema Escolar — Gestiones</title>
+<link rel="stylesheet" href="../assets/style.css">
+
+    <style>
+      .nav-item[data-page="gestions"] { background:rgba(79,142,247,.15);color:#fff;border-left:3px solid var(--accent); }
+    </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎓</div>
+      <span>Sistema<br>Escolar</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a class="nav-item" href="../index.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <div class="nav-section-title">Administración</div>
+      <a class="nav-item" href="../gestions/index.html" data-page="gestions"><span class="nav-icon">📅</span> Gestiones</a>
+      <a class="nav-item" href="../grados/index.html" data-page="grados"><span class="nav-icon">🏆</span> Grados</a>
+      <a class="nav-item" href="../materias/index.html" data-page="materias"><span class="nav-icon">📚</span> Materias</a>
+      <a class="nav-item" href="../profesores/index.html" data-page="profesores"><span class="nav-icon">👨‍🏫</span> Profesores</a>
+      <a class="nav-item" href="../cursos/index.html" data-page="cursos"><span class="nav-icon">🏫</span> Cursos</a>
+      <div class="nav-section-title">Alumnos</div>
+      <a class="nav-item" href="../estudiantes/index.html" data-page="estudiantes"><span class="nav-icon">🧑‍🎓</span> Estudiantes</a>
+      <a class="nav-item" href="../inscripciones/index.html" data-page="inscripciones"><span class="nav-icon">📝</span> Inscripciones</a>
+      <a class="nav-item" href="../calificaciones/index.html" data-page="calificaciones"><span class="nav-icon">⭐</span> Calificaciones</a>
+      <div class="nav-section-title">Finanzas y Acceso</div>
+      <a class="nav-item" href="../pagos/index.html" data-page="pagos"><span class="nav-icon">💳</span> Pagos</a>
+      <a class="nav-item" href="../usuarios/index.html" data-page="usuarios"><span class="nav-icon">👤</span> Usuarios</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">A</div>
+      <div class="user-info">
+        <div class="user-name">Administrador</div>
+        <div class="user-role">Super Admin</div>
+      </div>
+    </div>
+  </aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">📅 Gestiones</div>
+      <div class="topbar-subtitle">Gestión de gestiones</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-badge">📅 Gestión 2025</div>
+      <button class="btn btn-primary" onclick="openModal('modalAdd')">➕ Nuevo Gestion</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-value">3</div><div class="stat-label">Gestiones Activas</div></div></div>
+    <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-value">5</div><div class="stat-label">Gestiones Cerradas</div></div></div>
+    <div class="stat-card"><div class="stat-icon amber">🔄</div><div><div class="stat-value">2025</div><div class="stat-label">Gestión Actual</div></div></div>
+  </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📅</div>
+        <span class="card-title">Listado de Gestiones</span>
+        <span id="totalCount" class="badge badge-blue" style="margin-left:auto">Cargando…</span>
+      </div>
+
+      <!-- Toolbar búsqueda + filtros -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Buscar gestiones…" oninput="liveSearch()">
+        </div>
+        
+    <select class="filter-select" id="fEstado">
+      <option value="">Estado</option>
+      <option value="activo">Activo</option>
+      <option value="cerrado">Cerrado</option>
+    </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">🔄 Limpiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Exportar</button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrap">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th data-sort="0">#</th><th data-sort="1">Nombre Gestión</th><th data-sort="2">Año</th><th>Fecha Inicio</th><th>Fecha Fin</th><th class="center">Estado</th>
+              <th class="center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+    <tr><td>1</td><td>📅 Gestión 2025</td><td>2025</td><td>02 Ene 2025</td><td>15 Dic 2025</td><td class="center"><span class="badge badge-green">✅ Activo</span></td><td class="center"><div class="action-group"><button class="action-btn view" title="Ver" onclick="showToast('Viendo gestión 2025','info')">👁️</button><button class="action-btn edit" title="Editar" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" title="Eliminar" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>2</td><td>📅 Gestión 2024</td><td>2024</td><td>02 Ene 2024</td><td>15 Dic 2024</td><td class="center"><span class="badge badge-gray">🔒 Cerrado</span></td><td class="center"><div class="action-group"><button class="action-btn view" title="Ver" onclick="showToast('Viendo gestión 2024','info')">👁️</button><button class="action-btn edit" title="Editar" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" title="Eliminar" onclick="delRow(this)">🗑️</button></div></td></tr>
+    <tr><td>3</td><td>📅 Gestión 2023</td><td>2023</td><td>03 Ene 2023</td><td>16 Dic 2023</td><td class="center"><span class="badge badge-gray">🔒 Cerrado</span></td><td class="center"><div class="action-group"><button class="action-btn view" title="Ver" onclick="showToast('Viendo gestión 2023','info')">👁️</button><button class="action-btn edit" title="Editar" onclick="openModal('modalAdd')">✏️</button><button class="action-btn delete" title="Eliminar" onclick="delRow(this)">🗑️</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="pagination">
+        <span id="paginInfo">Mostrando 1–10 de <strong id="totalRows">0</strong> registros</span>
+        <div class="page-btns">
+          <button class="page-btn" onclick="changePage(-1)">‹</button>
+          <button class="page-btn active" id="pgCurrent">1</button>
+          <button class="page-btn" onclick="changePage(1)">›</button>
+        </div>
+      </div>
+    </div><!-- /card -->
+  </div><!-- /page-content -->
+</main>
+
+
+  <div class="modal-overlay" id="modalAdd">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">📅</div>
+        <span class="modal-title">Nueva Gestión Académica</span>
+        <button class="modal-close" onclick="closeModal('modalAdd')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full"><div class="form-section-title">📋 Datos de la Gestión</div></div>
+          <div class="form-group full">
+            <label class="form-label"><span class="label-icon">📅</span> Nombre de la Gestión</label>
+            <input class="form-control" type="text" placeholder="Ej: Gestión 2026">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">🔢</span> Año</label>
+            <input class="form-control" type="number" placeholder="2026" min="2000" max="2100">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">✅</span> Estado</label>
+            <select class="form-control"><option>Activo</option><option>Cerrado</option><option>Planificado</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📆</span> Fecha de Inicio</label>
+            <input class="form-control" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="label-icon">📆</span> Fecha de Fin</label>
+            <input class="form-control" type="date">
+          </div>
+          <div class="form-group full">
+            <label class="form-label"><span class="label-icon">📝</span> Descripción</label>
+            <textarea class="form-control" placeholder="Descripción opcional de la gestión…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modalAdd')">❌ Cancelar</button>
+        <button class="btn btn-success" onclick="closeModal('modalAdd');showToast('Gestión guardada exitosamente','success')">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script src="../assets/shared.js"></script>
+<script>
+// Count visible rows and update badge
+function updateCount() {
+  const rows = document.querySelectorAll('#mainTable tbody tr:not([style*="none"])');
+  document.getElementById('totalCount').textContent = rows.length + ' registros';
+  document.getElementById('totalRows').textContent = rows.length;
+}
+
+function liveSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+  updateCount();
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.filter-select').forEach(s => s.value = '');
+  document.querySelectorAll('#mainTable tbody tr').forEach(r => r.style.display = '');
+  updateCount();
+}
+
+function exportCSV() {
+  const rows = Array.from(document.querySelectorAll('#mainTable tr'));
+  const csv = rows.map(r => Array.from(r.cells).map(c => '"'+c.textContent.trim().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'gestions.csv';
+  a.click();
+  showToast('Archivo CSV exportado correctamente', 'success');
+}
+
+let currentPage = 1;
+function changePage(dir) {
+  currentPage = Math.max(1, currentPage + dir);
+  document.getElementById('pgCurrent').textContent = currentPage;
+}
+
+function delRow(btn) {
+  confirmAction('¿Desea eliminar este registro?', () => {
+    btn.closest('tr').remove();
+    updateCount();
+    showToast('Registro eliminado', 'danger');
+  });
+}
+
+// Apply select filters
+document.querySelectorAll('.filter-select').forEach(sel => {
+  sel.addEventListener('change', () => {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('#mainTable tbody tr').forEach(row => {
+      let show = row.textContent.toLowerCase().includes(q);
+      document.querySelectorAll('.filter-select').forEach(s => {
+        if (s.value && show) show = row.textContent.toLowerCase().includes(s.value.toLowerCase());
+      });
+      row.style.display = show ? '' : 'none';
+    });
+    updateCount();
+  });
+});
+
+makeSortable('mainTable');
+updateCount();
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema Escolar — Dashboard</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+.module-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-color, var(--accent));
+}
+.module-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--card-color, var(--accent));
+}
+.module-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  background: color-mix(in srgb, var(--card-color, var(--accent)) 12%, transparent);
+}
+.module-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.module-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.module-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.module-count {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--card-color, var(--accent));
+}
+.module-arrow { font-size: 18px; color: var(--card-color, var(--accent)); }
+
+/* Quick search bar */
+.quick-search {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+.quick-search input {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 16px 10px 42px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition);
+  background: var(--bg);
+}
+.quick-search input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(79,142,247,.12); }
+.quick-search-wrap { position: relative; flex: 1; min-width: 220px; }
+.quick-search-wrap .si { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.section-head h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  flex: 1;
+}
+.section-divider { border: none; border-top: 1.5px solid var(--border); margin: 28px 0 22px; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <span>Sistema<br>Escolar</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">Principal</div>
+    <a class="nav-item active" href="index.html" data-page="index.html">
+      <span class="nav-icon">🏠</span> Dashboard
+    </a>
+    <div class="nav-section-title">Administración</div>
+    <a class="nav-item" href="gestions/index.html" data-page="gestions">
+      <span class="nav-icon">📅</span> Gestiones
+    </a>
+    <a class="nav-item" href="grados/index.html" data-page="grados">
+      <span class="nav-icon">🏆</span> Grados
+    </a>
+    <a class="nav-item" href="materias/index.html" data-page="materias">
+      <span class="nav-icon">📚</span> Materias
+    </a>
+    <a class="nav-item" href="profesores/index.html" data-page="profesores">
+      <span class="nav-icon">👨‍🏫</span> Profesores
+    </a>
+    <a class="nav-item" href="cursos/index.html" data-page="cursos">
+      <span class="nav-icon">🏫</span> Cursos
+    </a>
+    <div class="nav-section-title">Alumnos</div>
+    <a class="nav-item" href="estudiantes/index.html" data-page="estudiantes">
+      <span class="nav-icon">🧑‍🎓</span> Estudiantes
+    </a>
+    <a class="nav-item" href="inscripciones/index.html" data-page="inscripciones">
+      <span class="nav-icon">📝</span> Inscripciones
+    </a>
+    <a class="nav-item" href="calificaciones/index.html" data-page="calificaciones">
+      <span class="nav-icon">⭐</span> Calificaciones
+    </a>
+    <div class="nav-section-title">Finanzas y Acceso</div>
+    <a class="nav-item" href="pagos/index.html" data-page="pagos">
+      <span class="nav-icon">💳</span> Pagos
+    </a>
+    <a class="nav-item" href="usuarios/index.html" data-page="usuarios">
+      <span class="nav-icon">👤</span> Usuarios
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">A</div>
+    <div class="user-info">
+      <div class="user-name">Administrador</div>
+      <div class="user-role">Super Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ─────────────────────────────────────────── -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🏠 Dashboard Principal</div>
+      <div class="topbar-subtitle">Panel de control del Sistema Escolar</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-badge">📅 Gestión 2025</div>
+      <div class="topbar-badge">🟢 En línea</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- Stats globales -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon green">🧑‍🎓</div>
+        <div>
+          <div class="stat-value">1,248</div>
+          <div class="stat-label">Estudiantes Activos</div>
+          <div class="stat-trend up">↑ 12% vs año anterior</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">👨‍🏫</div>
+        <div>
+          <div class="stat-value">64</div>
+          <div class="stat-label">Profesores</div>
+          <div class="stat-trend up">↑ 3 nuevos este mes</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">🏫</div>
+        <div>
+          <div class="stat-value">38</div>
+          <div class="stat-label">Cursos Activos</div>
+          <div class="stat-trend up">↑ 5 cursos nuevos</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon cyan">💳</div>
+        <div>
+          <div class="stat-value">Bs 92K</div>
+          <div class="stat-label">Recaudación Mes</div>
+          <div class="stat-trend up">↑ 8% vs mes anterior</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">⚠️</div>
+        <div>
+          <div class="stat-value">47</div>
+          <div class="stat-label">Pagos Pendientes</div>
+          <div class="stat-trend dn">↓ Requiere atención</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Búsqueda rápida global -->
+    <div class="quick-search">
+      <span style="font-size:20px">🔍</span>
+      <div class="quick-search-wrap">
+        <span class="si">🔎</span>
+        <input type="text" id="globalSearch" placeholder="Buscar estudiante, profesor, curso, materia…" oninput="globalFilter()">
+      </div>
+      <select class="filter-select" onchange="globalFilter()" id="globalModule">
+        <option value="">Todos los módulos</option>
+        <option value="estudiantes">Estudiantes</option>
+        <option value="profesores">Profesores</option>
+        <option value="cursos">Cursos</option>
+        <option value="materias">Materias</option>
+        <option value="pagos">Pagos</option>
+      </select>
+      <button class="btn btn-primary" onclick="globalFilter()">🔍 Buscar</button>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Módulos -->
+    <div class="section-head">
+      <h2>📦 Módulos del Sistema</h2>
+      <span class="badge badge-blue">11 módulos</span>
+    </div>
+
+    <div class="module-grid" id="moduleGrid">
+      <a class="module-card" href="gestions/index.html" style="--card-color:#4f8ef7" data-name="gestiones periodos académicos">
+        <div class="module-icon">📅</div>
+        <div>
+          <div class="module-name">Gestiones</div>
+          <div class="module-desc">Períodos académicos y años escolares</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">3</div><div style="font-size:11px;color:var(--text-muted)">gestiones activas</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="grados/index.html" style="--card-color:#8b5cf6" data-name="grados niveles educativos">
+        <div class="module-icon">🏆</div>
+        <div>
+          <div class="module-name">Grados</div>
+          <div class="module-desc">Niveles y grados educativos</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">12</div><div style="font-size:11px;color:var(--text-muted)">grados registrados</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="materias/index.html" style="--card-color:#f59e0b" data-name="materias asignaturas académicas">
+        <div class="module-icon">📚</div>
+        <div>
+          <div class="module-name">Materias</div>
+          <div class="module-desc">Asignaturas y áreas académicas</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">28</div><div style="font-size:11px;color:var(--text-muted)">materias activas</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="profesores/index.html" style="--card-color:#06b6d4" data-name="profesores docentes instructores maestros">
+        <div class="module-icon">👨‍🏫</div>
+        <div>
+          <div class="module-name">Profesores</div>
+          <div class="module-desc">Docentes y personal académico</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">64</div><div style="font-size:11px;color:var(--text-muted)">docentes activos</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="cursos/index.html" style="--card-color:#10b981" data-name="cursos secciones clases">
+        <div class="module-icon">🏫</div>
+        <div>
+          <div class="module-name">Cursos</div>
+          <div class="module-desc">Secciones y grupos de clase</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">38</div><div style="font-size:11px;color:var(--text-muted)">cursos activos</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="estudiantes/index.html" style="--card-color:#22c55e" data-name="estudiantes alumnos educandos">
+        <div class="module-icon">🧑‍🎓</div>
+        <div>
+          <div class="module-name">Estudiantes</div>
+          <div class="module-desc">Registro completo de alumnos</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">1,248</div><div style="font-size:11px;color:var(--text-muted)">estudiantes activos</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="inscripciones/index.html" style="--card-color:#f43f5e" data-name="inscripciones matrículas registros">
+        <div class="module-icon">📝</div>
+        <div>
+          <div class="module-name">Inscripciones</div>
+          <div class="module-desc">Matrículas y registros escolares</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">1,186</div><div style="font-size:11px;color:var(--text-muted)">inscritos</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="calificaciones/index.html" style="--card-color:#eab308" data-name="calificaciones notas evaluaciones">
+        <div class="module-icon">⭐</div>
+        <div>
+          <div class="module-name">Calificaciones</div>
+          <div class="module-desc">Notas y evaluaciones académicas</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">4,820</div><div style="font-size:11px;color:var(--text-muted)">registros</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="pagos/index.html" style="--card-color:#3b82f6" data-name="pagos cuotas pensiones cobros">
+        <div class="module-icon">💳</div>
+        <div>
+          <div class="module-name">Pagos</div>
+          <div class="module-desc">Cuotas, pensiones y cobros</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">Bs 92K</div><div style="font-size:11px;color:var(--text-muted)">recaudado este mes</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+      <a class="module-card" href="usuarios/index.html" style="--card-color:#64748b" data-name="usuarios cuentas acceso sistema">
+        <div class="module-icon">👤</div>
+        <div>
+          <div class="module-name">Usuarios</div>
+          <div class="module-desc">Cuentas y control de acceso</div>
+        </div>
+        <div class="module-meta">
+          <div><div class="module-count">18</div><div style="font-size:11px;color:var(--text-muted)">usuarios activos</div></div>
+          <div class="module-arrow">→</div>
+        </div>
+      </a>
+    </div>
+
+  </div><!-- /page-content -->
+</main>
+
+<script src="assets/shared.js"></script>
+<script>
+function globalFilter() {
+  const q = document.getElementById('globalSearch').value.toLowerCase().trim();
+  const mod = document.getElementById('globalModule').value.toLowerCase();
+  document.querySelectorAll('.module-card').forEach(card => {
+    const name = (card.dataset.name || '').toLowerCase();
+    const href = (card.getAttribute('href') || '').toLowerCase();
+    const matchQ = !q || name.includes(q);
+    const matchM = !mod || href.includes(mod);
+    card.style.display = (matchQ && matchM) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
