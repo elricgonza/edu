@@ -5,8 +5,6 @@ from app import db
 from app.models import Grado, Gestion, Materia, Profesor, Curso, Alumno, Inscrito, Asignado, Nota, Pago, Costo
 from app.decorators import permission_required
 
-PER_PAGE = 10   # Registros por página en todas las listas
-
 # ── GRADO ─────────────────────────────────────────────────
 grado_bp = Blueprint('grado', __name__, url_prefix='/grado')
 
@@ -14,30 +12,8 @@ grado_bp = Blueprint('grado', __name__, url_prefix='/grado')
 @login_required
 @permission_required('grado_ver')
 def index():
-    q      = request.args.get('q', '').strip()
-    ges_id = request.args.get('ges_id', type=int)
-    nivel  = request.args.get('nivel', '').strip()
-    page   = request.args.get('page', 1, type=int)
-
-    query = Grado.query.join(Gestion)
-
-    if q:
-        query = query.filter(Grado.grado.ilike(f'%{q}%'))
-    if ges_id:
-        query = query.filter(Grado.ges_id == ges_id)
-    if nivel:
-        query = query.filter(Grado.nivel.ilike(f'%{nivel}%'))
-
-    query = query.order_by(Gestion.gestion.desc(), Grado.nivel, Grado.grado)
-    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-
-    gestiones = Gestion.query.order_by(Gestion.gestion.desc()).all()
-    niveles   = [r[0] for r in db.session.query(Grado.nivel).distinct().order_by(Grado.nivel).all()]
-
-    return render_template('grado/index.html',
-        grados=pagination.items, pagination=pagination,
-        q=q, ges_id=ges_id, nivel=nivel,
-        gestiones=gestiones, niveles=niveles)
+    lista = Grado.query.join(Gestion).order_by(Gestion.gestion.desc(), Grado.nivel, Grado.grado).all()
+    return render_template('grado/index.html', grados=lista)
 
 @grado_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -88,25 +64,8 @@ materia_bp = Blueprint('materia', __name__, url_prefix='/materia')
 @login_required
 @permission_required('materia_ver')
 def index():
-    q      = request.args.get('q', '').strip()
-    gra_id = request.args.get('gra_id', type=int)
-    page   = request.args.get('page', 1, type=int)
-
-    query = Materia.query.join(Grado)
-
-    if q:
-        query = query.filter(Materia.materia.ilike(f'%{q}%'))
-    if gra_id:
-        query = query.filter(Materia.gra_id == gra_id)
-
-    query = query.order_by(Grado.grado, Materia.materia)
-    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-
-    grados = Grado.query.order_by(Grado.grado).all()
-
-    return render_template('materia/index.html',
-        materias=pagination.items, pagination=pagination,
-        q=q, gra_id=gra_id, grados=grados)
+    lista = Materia.query.join(Grado).order_by(Grado.grado, Materia.materia).all()
+    return render_template('materia/index.html', materias=lista)
 
 @materia_bp.route('/nueva', methods=['GET', 'POST'])
 @login_required
@@ -155,32 +114,8 @@ profesor_bp = Blueprint('profesor', __name__, url_prefix='/profesor')
 @login_required
 @permission_required('profesor_ver')
 def index():
-    q      = request.args.get('q', '').strip()
-    activo = request.args.get('activo', '')      # 'true' | 'false' | ''
-    page   = request.args.get('page', 1, type=int)
-
-    query = Profesor.query
-
-    if q:
-        query = query.filter(
-            db.or_(
-                Profesor.nombre.ilike(f'%{q}%'),
-                Profesor.paterno.ilike(f'%{q}%'),
-                Profesor.materno.ilike(f'%{q}%'),
-                Profesor.formacion.ilike(f'%{q}%'),
-            )
-        )
-    if activo == 'true':
-        query = query.filter(Profesor.activo == True)
-    elif activo == 'false':
-        query = query.filter(Profesor.activo == False)
-
-    query = query.order_by(Profesor.paterno, Profesor.nombre)
-    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-
-    return render_template('profesor/index.html',
-        profesores=pagination.items, pagination=pagination,
-        q=q, activo=activo)
+    lista = Profesor.query.order_by(Profesor.paterno, Profesor.nombre).all()
+    return render_template('profesor/index.html', profesores=lista)
 
 @profesor_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -292,8 +227,7 @@ alumno_bp = Blueprint('alumno', __name__, url_prefix='/alumno')
 @login_required
 @permission_required('alumno_ver')
 def index():
-    q    = request.args.get('q', '').strip()
-    page = request.args.get('page', 1, type=int)
+    q = request.args.get('q', '')
     query = Alumno.query
     if q:
         query = query.filter(
@@ -301,9 +235,8 @@ def index():
                    Alumno.paterno.ilike(f'%{q}%'),
                    Alumno.materno.ilike(f'%{q}%'))
         )
-    query = query.order_by(Alumno.paterno, Alumno.nombre)
-    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-    return render_template('alumno/index.html', alumnos=pagination.items, pagination=pagination, q=q)
+    lista = query.order_by(Alumno.paterno, Alumno.nombre).all()
+    return render_template('alumno/index.html', alumnos=lista, q=q)
 
 @alumno_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -362,40 +295,8 @@ inscrito_bp = Blueprint('inscrito', __name__, url_prefix='/inscrito')
 @login_required
 @permission_required('inscrito_ver')
 def index():
-    q      = request.args.get('q', '').strip()
-    estado = request.args.get('estado', '')       # inscrito | reserva | abandono | pendiente
-    cur_id = request.args.get('cur_id', type=int)
-    page   = request.args.get('page', 1, type=int)
-
-    query = Inscrito.query.join(Alumno).join(Curso)
-
-    if q:
-        query = query.filter(
-            db.or_(
-                Alumno.nombre.ilike(f'%{q}%'),
-                Alumno.paterno.ilike(f'%{q}%'),
-                Alumno.materno.ilike(f'%{q}%'),
-            )
-        )
-    if cur_id:
-        query = query.filter(Inscrito.cur_id == cur_id)
-    if estado == 'inscrito':
-        query = query.filter(Inscrito.inscrito == True, Inscrito.abandono == False)
-    elif estado == 'reserva':
-        query = query.filter(Inscrito.reserva == True, Inscrito.abandono == False)
-    elif estado == 'abandono':
-        query = query.filter(Inscrito.abandono == True)
-    elif estado == 'pendiente':
-        query = query.filter(Inscrito.inscrito == False, Inscrito.reserva == False, Inscrito.abandono == False)
-
-    query = query.order_by(Alumno.paterno, Alumno.nombre)
-    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-
-    cursos = Curso.query.order_by(Curso.gestion.desc(), Curso.paralelo).all()
-
-    return render_template('inscrito/index.html',
-        inscritos=pagination.items, pagination=pagination,
-        q=q, estado=estado, cur_id=cur_id, cursos=cursos)
+    lista = Inscrito.query.join(Alumno).join(Curso).order_by(Alumno.paterno, Alumno.nombre).all()
+    return render_template('inscrito/index.html', inscritos=lista)
 
 @inscrito_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -413,6 +314,7 @@ def nuevo():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(ins); db.session.flush()
+        # Generar plan de pagos automáticamente
         costo = Costo.query.filter_by(cur_id=ins.cur_id).first()
         if costo:
             for i in range(1, costo.nro_cuota + 1):
