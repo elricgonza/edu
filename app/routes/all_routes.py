@@ -237,8 +237,22 @@ curso_bp = Blueprint('curso', __name__, url_prefix='/curso')
 @login_required
 @permission_required('curso_ver')
 def index():
-    lista = Curso.query.join(Grado).order_by(Curso.gestion.desc(), Grado.grado, Curso.paralelo).all()
-    return render_template('curso/index.html', cursos=lista)
+    q    = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    query = Curso.query.join(Grado).order_by(Curso.gestion.desc(), Grado.grado, Curso.paralelo)
+    if q:
+        query = query.filter(
+            db.or_(
+                Curso.curso.ilike(f'%{q}%'),
+                Curso.paralelo.ilike(f'%{q}%'),
+                Curso.aula.ilike(f'%{q}%'),
+                Grado.grado.ilike(f'%{q}%'),
+                db.cast(Curso.gestion, db.String).ilike(f'%{q}%'),
+            )
+        )
+    pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
+    return render_template('curso/index.html', cursos=pagination.items,
+                           pagination=pagination, q=q, total=pagination.total)
 
 @curso_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -299,11 +313,12 @@ def index():
         query = query.filter(
             db.or_(Alumno.nombre.ilike(f'%{q}%'),
                    Alumno.paterno.ilike(f'%{q}%'),
-                   Alumno.materno.ilike(f'%{q}%'))
+                   Alumno.materno.ilike(f'%{q}%'),
+                   db.cast(Alumno.ci, db.String).ilike(f'%{q}%'))
         )
     query = query.order_by(Alumno.paterno, Alumno.nombre)
     pagination = query.paginate(page=page, per_page=PER_PAGE, error_out=False)
-    return render_template('alumno/index.html', alumnos=pagination.items, pagination=pagination, q=q)
+    return render_template('alumno/index.html', alumnos=pagination.items, pagination=pagination, q=q, total=pagination.total)
 
 @alumno_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -515,7 +530,6 @@ pago_bp = Blueprint('pago', __name__, url_prefix='/pago')
 @permission_required('pago_ver')
 def index():
     alu_id = request.args.get('alu_id', type=int)
-    alumnos = Alumno.query.filter_by(activo=True).order_by(Alumno.paterno).all()
     pagos = []
     alumno_sel = None
     if alu_id:
@@ -523,8 +537,30 @@ def index():
         ins = Inscrito.query.filter_by(alu_id=alu_id).first()
         if ins:
             pagos = Pago.query.filter_by(ins_id=ins.id).order_by(Pago.nro_cuota).all()
-    return render_template('pago/index.html', pagos=pagos, alumnos=alumnos,
+    return render_template('pago/index.html', pagos=pagos,
                            alu_id=alu_id, alumno_sel=alumno_sel)
+
+@pago_bp.route('/buscar-alumno')
+@login_required
+@permission_required('pago_ver')
+def buscar_alumno():
+    q = request.args.get('q', '').strip()
+    if not q or len(q) < 2:
+        return jsonify([])
+    resultados = Alumno.query.filter(
+        db.or_(
+            Alumno.nombre.ilike(f'%{q}%'),
+            Alumno.paterno.ilike(f'%{q}%'),
+            Alumno.materno.ilike(f'%{q}%'),
+            db.cast(Alumno.ci, db.String).ilike(f'%{q}%'),
+        )
+    ).order_by(Alumno.paterno, Alumno.nombre).limit(10).all()
+    return jsonify([{
+        'id': a.id,
+        'texto': a.nombre_completo,
+        'ci': str(a.ci) if a.ci else '-',
+        'activo': a.activo,
+    } for a in resultados])
 
 @pago_bp.route('/<int:id>/registrar', methods=['GET', 'POST'])
 @login_required
@@ -542,4 +578,7 @@ def registrar(id):
         flash(f'Cuota {pago.nro_cuota} registrada como pagada.', 'success')
         ins = Inscrito.query.get(pago.ins_id)
         return redirect(url_for('pago.index', alu_id=ins.alu_id))
-    return render_template('pago/form.html', pago=pago)
+    otros_pagos = Pago.query.filter_by(ins_id=pago.ins_id).order_by(Pago.nro_cuota).all()
+    return render_template('pago/form.html', pago=pago,
+                           otros_pagos=otros_pagos,
+                           today=date.today().isoformat())
