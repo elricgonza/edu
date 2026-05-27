@@ -2,7 +2,7 @@ from datetime import date
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db, bcrypt
-from app.models import Usuario, Rol, Permiso, usuario_rol, rol_permiso
+from app.models import Usuario, Rol, Permiso, Profesor, usuario_rol, rol_permiso
 from app.decorators import role_required, PERMISOS, PERMISOS_POR_ROL
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -151,3 +151,68 @@ def rol_editar(id):
 def permisos():
     lista = Permiso.query.order_by(Permiso.permiso).all()
     return render_template('admin/permisos.html', permisos=lista)
+
+
+# ── Asignar Usuario → Profesor ────────────────────────────
+
+@admin_bp.route('/asignar-profesor', methods=['GET', 'POST'])
+@login_required
+@role_required('administrador')
+def asignar_profesor():
+    profesores = (Profesor.query
+                  .order_by(Profesor.paterno, Profesor.nombre)
+                  .all())
+    # Usuarios con rol 'profesor' que aún no están vinculados
+    usuarios = (Usuario.query
+                .join(Usuario.roles)
+                .filter(Rol.rol == 'profesor')
+                .order_by(Usuario.usuario)
+                .all())
+
+    if request.method == 'POST':
+        pro_id = request.form.get('pro_id', type=int)
+        usu_id = request.form.get('usu_id', type=int)
+
+        if not pro_id or not usu_id:
+            flash('Debe seleccionar un profesor y un usuario.', 'danger')
+            return redirect(url_for('admin.asignar_profesor'))
+
+        profesor = Profesor.query.get_or_404(pro_id)
+        usuario  = Usuario.query.get_or_404(usu_id)
+
+        # Verificar que el usuario no esté ya asignado a otro profesor
+        conflicto = Profesor.query.filter(
+            Profesor.usr_id_login == usu_id,
+            Profesor.id != pro_id
+        ).first()
+        if conflicto:
+            flash(
+                f'El usuario "{usuario.usuario}" ya está asignado al profesor '
+                f'"{conflicto.nombre_completo}". Desvincúlelo primero.',
+                'danger'
+            )
+            return redirect(url_for('admin.asignar_profesor'))
+
+        profesor.usr_id_login = usu_id
+        db.session.commit()
+        flash(
+            f'Usuario "{usuario.usuario}" asignado correctamente al profesor '
+            f'"{profesor.nombre_completo}".',
+            'success'
+        )
+        return redirect(url_for('admin.asignar_profesor'))
+
+    return render_template('admin/asignar_profesor.html',
+                           profesores=profesores,
+                           usuarios=usuarios)
+
+
+@admin_bp.route('/asignar-profesor/desvincular/<int:pro_id>', methods=['POST'])
+@login_required
+@role_required('administrador')
+def desvincular_profesor(pro_id):
+    profesor = Profesor.query.get_or_404(pro_id)
+    profesor.usr_id_login = None
+    db.session.commit()
+    flash(f'Usuario desvinculado del profesor "{profesor.nombre_completo}".', 'success')
+    return redirect(url_for('admin.asignar_profesor'))
