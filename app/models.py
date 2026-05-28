@@ -168,7 +168,7 @@ class Asignado(db.Model):
     id     = db.Column(db.Integer, primary_key=True)
     cur_id = db.Column(db.Integer, db.ForeignKey('curso.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
     mat_id = db.Column(db.Integer, db.ForeignKey('materia.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
-    pro_id = db.Column(db.Integer, db.ForeignKey('profesor.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
+    pro_id = db.Column(db.Integer, db.ForeignKey('profesor.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=True)
     creado = db.Column(db.Date, nullable=False, default=date.today)
     act    = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
     usu_id = db.Column(db.Integer, nullable=False)

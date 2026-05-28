@@ -32,6 +32,7 @@ def create_app(config_class=Config):
     from app.routes.nota import nota_bp
     from app.routes.pago import pago_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.asignado import asignado_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -45,5 +46,6 @@ def create_app(config_class=Config):
     app.register_blueprint(nota_bp)
     app.register_blueprint(pago_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(asignado_bp)
 
     return app
