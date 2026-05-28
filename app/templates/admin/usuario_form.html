@@ -1,36 +1,151 @@
 {% extends "base.html" %}
 {% from "partials/macros.html" import breadcrumb %}
-{% block page_title %}{{ 'Editar' if usuario else 'Nuevo' }} Usuario{% endblock %}
+{% block page_title %}{{ 'Editar Usuario' if usuario else 'Nuevo Usuario' }}{% endblock %}
+
 {% block content %}
-{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Usuarios', url_for('admin.usuarios')), ('Formulario', '#')]) }}
-<div class="max-w-lg"><div class="card"><form method="POST"><div class="space-y-5">
-  <div><label class="form-label">Nombre de Usuario</label>
-  <input type="text" name="usuario" required value="{{ usuario.usuario if usuario else '' }}" {% if usuario %}readonly{% endif %} class="form-input {% if usuario %}bg-slate-50{% endif %}"></div>
-  <div><label class="form-label">Email</label><input type="email" name="email" required value="{{ usuario.email if usuario else '' }}" class="form-input"></div>
-  <div><label class="form-label">{{ 'Nueva Contraseña (dejar vacío para no cambiar)' if usuario else 'Contraseña' }}</label>
-  <input type="password" name="password" {% if not usuario %}required{% endif %} minlength="6" class="form-input" placeholder="Mínimo 6 caracteres"></div>
-  <div>
-    <label class="form-label">Roles Asignados</label>
-    <div class="space-y-2 mt-2">
-      {% for r in roles %}
-      <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-primary-300 cursor-pointer">
-        <input type="checkbox" name="roles" value="{{ r.id }}"
-               {% if usuario and r in usuario.roles %}checked{% endif %}
-               class="w-4 h-4 rounded border-slate-300 text-primary-600">
-        <div>
-          <p class="text-sm font-semibold text-slate-700">{{ r.rol }}</p>
-          {% if r.descripcion %}<p class="text-xs text-slate-500">{{ r.descripcion }}</p>{% endif %}
-        </div>
-      </label>{% endfor %}
+{{ breadcrumb([('Inicio', '/'), ('Administración', '#'), ('Usuarios', url_for('admin.usuarios')), (('Editar: ' ~ usuario.usuario) if usuario else 'Nuevo', '#')]) }}
+
+<div class="max-w-xl">
+
+  {# ── Encabezado de sección ── #}
+  <div class="flex items-center gap-4 mb-6">
+    <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm
+                {% if usuario %}bg-primary-100{% else %}bg-emerald-100{% endif %}">
+      {% if usuario %}
+        <span class="text-2xl font-heading font-bold text-primary-700">{{ usuario.usuario[0].upper() }}</span>
+      {% else %}
+        <svg class="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+      {% endif %}
+    </div>
+    <div>
+      <h2 class="font-heading font-bold text-xl text-slate-800">
+        {{ 'Editar: ' ~ usuario.usuario if usuario else 'Crear nuevo usuario' }}
+      </h2>
+      <p class="text-sm text-slate-500">
+        {{ 'Modifica los datos del usuario y sus roles asignados.' if usuario
+           else 'Complete los datos para crear una cuenta de acceso al sistema.' }}
+      </p>
     </div>
   </div>
-  {% if usuario %}
-  <div class="flex items-center gap-3">
-    <input type="checkbox" id="activo" name="activo" {% if usuario.activo %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-primary-600">
-    <label for="activo" class="text-sm font-medium text-slate-700">Usuario activo</label>
-  </div>{% endif %}
-</div><div class="flex gap-3 mt-8">
-  <button type="submit" class="btn-primary">{{ 'Guardar' if usuario else 'Crear Usuario' }}</button>
-  <a href="{{ url_for('admin.usuarios') }}" class="btn-secondary">Cancelar</a>
-</div></form></div></div>
+
+  <div class="card">
+    <form method="POST" class="space-y-6">
+
+      {# ── Datos básicos ── #}
+      <div>
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 pb-2 border-b border-slate-100">
+          Datos de la cuenta
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label class="form-label">Nombre de usuario</label>
+            <input type="text" name="usuario" required
+                   value="{{ usuario.usuario if usuario else '' }}"
+                   {% if usuario %}readonly{% endif %}
+                   class="form-input {% if usuario %}bg-slate-50 text-slate-500 cursor-not-allowed{% endif %}"
+                   placeholder="Ej: jperez">
+            {% if usuario %}
+              <p class="mt-1 text-xs text-slate-400">El nombre de usuario no puede modificarse.</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" name="email" required
+                   value="{{ usuario.email if usuario else '' }}"
+                   class="form-input"
+                   placeholder="correo@ejemplo.com">
+          </div>
+
+          <div>
+            <label class="form-label">
+              {% if usuario %}Nueva contraseña <span class="font-normal text-slate-400">(dejar vacío para no cambiar)</span>
+              {% else %}Contraseña{% endif %}
+            </label>
+            <input type="password" name="password"
+                   {% if not usuario %}required{% endif %}
+                   minlength="6"
+                   class="form-input"
+                   placeholder="Mínimo 6 caracteres">
+          </div>
+        </div>
+      </div>
+
+      {# ── Roles ── #}
+      <div>
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 pb-2 border-b border-slate-100">
+          Roles asignados
+        </h3>
+        {% if roles %}
+          <div class="grid grid-cols-1 gap-2">
+            {% for r in roles %}
+            <label class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150
+                          {% if usuario and r in usuario.roles %}
+                            border-primary-300 bg-primary-50
+                          {% else %}
+                            border-slate-200 hover:border-primary-200 hover:bg-slate-50
+                          {% endif %}">
+              <input type="checkbox" name="roles" value="{{ r.id }}"
+                     {% if usuario and r in usuario.roles %}checked{% endif %}
+                     class="w-4 h-4 rounded border-slate-300 text-primary-600 mt-0.5 flex-shrink-0
+                            focus:ring-primary-500">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-700 capitalize">{{ r.rol }}</p>
+                {% if r.descripcion %}
+                  <p class="text-xs text-slate-500 mt-0.5">{{ r.descripcion }}</p>
+                {% endif %}
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                  {% for p in r.permisos[:4] %}
+                    <span class="badge-gray text-xs">{{ p.permiso }}</span>
+                  {% endfor %}
+                  {% if r.permisos|length > 4 %}
+                    <span class="text-xs text-slate-400">+{{ r.permisos|length - 4 }} más</span>
+                  {% endif %}
+                </div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-slate-400 italic py-3">No hay roles definidos.
+            <a href="{{ url_for('admin.roles') }}" class="text-primary-600 hover:underline">Crear roles</a>
+          </p>
+        {% endif %}
+      </div>
+
+      {# ── Estado (solo en edición) ── #}
+      {% if usuario %}
+      <div>
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 pb-2 border-b border-slate-100">
+          Estado de la cuenta
+        </h3>
+        <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+          <input type="checkbox" id="activo" name="activo"
+                 {% if usuario.activo %}checked{% endif %}
+                 class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+          <div>
+            <p class="text-sm font-semibold text-slate-700">Usuario activo</p>
+            <p class="text-xs text-slate-400">Los usuarios inactivos no pueden iniciar sesión.</p>
+          </div>
+        </label>
+      </div>
+      {% endif %}
+
+      {# ── Botones ── #}
+      <div class="flex gap-3 pt-2 border-t border-slate-100">
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ 'Guardar cambios' if usuario else 'Crear usuario' }}
+        </button>
+        <a href="{{ url_for('admin.usuarios') }}" class="btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
