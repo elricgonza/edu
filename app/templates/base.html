@@ -22,6 +22,15 @@
               700: '#631832',
               800: '#4A1226',
               900: '#310C19',
+            },
+            sidebar: {
+              bg:      '#1A1028',
+              section: '#261838',
+              hover:   '#2E1E42',
+              active:  '#7C1F3E',
+              border:  '#2E1E42',
+              text:    '#B8A8C8',
+              label:   '#6B5B82',
             }
           },
           fontFamily: {
@@ -42,21 +51,82 @@
     [x-cloak] { display: none !important; }
     body { font-family: 'Nunito Sans', sans-serif; }
     h1,h2,h3,h4,h5 { font-family: 'Plus Jakarta Sans', sans-serif; }
+
     .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
     .htmx-request .htmx-indicator { opacity: 1; }
-    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-slate-600; }
-    .sidebar-link:hover { @apply bg-primary-50 text-primary-700; }
-    .sidebar-link.active { @apply bg-primary-600 text-white shadow-md; }
-    .nav-section { @apply text-xs font-semibold tracking-widest uppercase text-slate-400 px-4 mt-5 mb-1; }
+
+    /* ── Sidebar ────────────────────────────────── */
+    .sidebar-base {
+      background: #1A1028;
+    }
+    .nav-group {
+      margin-top: 6px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .nav-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #8B7BA0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.025);
+    }
+    .nav-group-header svg {
+      opacity: .6;
+    }
+    .nav-group-items {
+      padding: 4px 6px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #B8A8C8;
+      transition: background 150ms, color 150ms;
+      text-decoration: none;
+    }
+    .sidebar-link svg { opacity: .7; flex-shrink: 0; transition: opacity 150ms; }
+    .sidebar-link:hover { background: rgba(255,255,255,0.07); color: #E8D8F8; }
+    .sidebar-link:hover svg { opacity: 1; }
+    .sidebar-link.active {
+      background: linear-gradient(135deg, #7C1F3E 0%, #9B2A52 100%);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 10px rgba(124,31,62,.45);
+    }
+    .sidebar-link.active svg { opacity: 1; }
+
+    /* ── Buttons ────────────────────────────────── */
     .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2; }
     .btn-primary   { @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500; }
     .btn-secondary { @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400; }
     .btn-danger    { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; }
     .btn-success   { @apply btn bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; }
+
+    /* ── Cards ──────────────────────────────────── */
     .card { @apply bg-white rounded-2xl shadow-sm border border-slate-100 p-6; }
+
+    /* ── Forms ──────────────────────────────────── */
     .form-label  { @apply block text-sm font-semibold text-slate-700 mb-1; }
     .form-input  { @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition; }
     .form-select { @apply form-input bg-white; }
+
+    /* ── Badges ─────────────────────────────────── */
     .badge        { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
     .badge-green  { @apply badge bg-emerald-100 text-emerald-800; }
     .badge-red    { @apply badge bg-red-100 text-red-800; }
@@ -64,9 +134,26 @@
     .badge-yellow { @apply badge bg-amber-100 text-amber-800; }
     .badge-gray   { @apply badge bg-slate-100 text-slate-700; }
     .badge-guindo { @apply badge bg-primary-100 text-primary-800; }
+
+    /* ── Table ──────────────────────────────────── */
     .table-header { @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider; }
     .table-cell   { @apply px-4 py-3 text-sm text-slate-700; }
     .table-row    { @apply border-t border-slate-100 hover:bg-primary-50/50 transition-colors; }
+
+    /* ── Flash ──────────────────────────────────── */
+    .flash-success { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-emerald-50 text-emerald-800 border border-emerald-200; }
+    .flash-danger  { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-red-50 text-red-800 border border-red-200; }
+    .flash-info    { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-primary-50 text-primary-800 border border-primary-200; }
+
+    /* ── Scrollbar sidebar ──────────────────────── */
+    #sidebar-nav::-webkit-scrollbar { width: 4px; }
+    #sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    #sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* ── Main scrollbar ─────────────────────────── */
+    main::-webkit-scrollbar { width: 6px; }
+    main::-webkit-scrollbar-track { background: #f8fafc; }
+    main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
@@ -76,146 +163,297 @@
 
   <!-- Overlay móvil -->
   <div x-show="sidebarOpen" x-cloak @click="sidebarOpen=false"
-       class="fixed inset-0 z-20 bg-black/40 lg:hidden" x-transition.opacity></div>
+       class="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden" x-transition.opacity></div>
 
-  <!-- SIDEBAR -->
+  <!-- ════════════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════════════ -->
   <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-         class="fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-100 flex flex-col transition-transform duration-300 lg:relative lg:translate-x-0 lg:flex shadow-lg">
+         class="sidebar-base fixed inset-y-0 left-0 z-30 w-64 flex flex-col transition-transform duration-300 lg:relative lg:translate-x-0 lg:flex"
+         style="box-shadow: 4px 0 24px rgba(0,0,0,.35);">
 
     <!-- Brand -->
-    <div class="flex items-center gap-3 px-5 py-5" style="background: linear-gradient(135deg, #7C1F3E 0%, #4A1226 100%);">
-      <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
-        <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+    <div class="flex items-center gap-3 px-5 py-5 flex-shrink-0"
+         style="background: linear-gradient(135deg, #7C1F3E 0%, #4A1226 100%); border-bottom: 1px solid rgba(255,255,255,0.08);">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background: rgba(255,255,255,0.15); box-shadow: inset 0 1px 1px rgba(255,255,255,.2), 0 2px 8px rgba(0,0,0,.3);">
+        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
           <rect x="10" y="2" width="4" height="20" rx="1.5"/>
           <rect x="3" y="8" width="18" height="4" rx="1.5"/>
         </svg>
       </div>
       <div class="min-w-0">
-        <p class="font-heading font-bold text-white leading-tight text-base tracking-wide">SHALOM</p>
-        <p class="text-xs text-white/70 truncate">Centro Educativo Cristiano</p>
+        <p class="font-heading font-bold text-white leading-tight text-base tracking-widest">SHALOM</p>
+        <p class="text-xs truncate" style="color: rgba(255,255,255,0.55); letter-spacing:.03em;">Centro Educativo Cristiano</p>
       </div>
     </div>
 
     <!-- Nav -->
-    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-      <a href="{{ url_for('dashboard.index') }}" class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <nav id="sidebar-nav" class="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+
+      <!-- Panel principal (suelto, destacado) -->
+      <a href="{{ url_for('dashboard.index') }}"
+         class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
+         style="{% if request.endpoint != 'dashboard.index' %}background:rgba(255,255,255,0.04);{% endif %}">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
         Panel Principal
       </a>
 
-      <p class="nav-section">Académico</p>
-      <a href="{{ url_for('gestion.index') }}" class="sidebar-link {% if 'gestion' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        Gestiones
-      </a>
-      <a href="{{ url_for('grado.index') }}" class="sidebar-link {% if 'grado' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        Grados
-      </a>
-      <a href="{{ url_for('materia.index') }}" class="sidebar-link {% if 'materia' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-        Materias
-      </a>
-      <a href="{{ url_for('profesor.index') }}" class="sidebar-link {% if 'profesor' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        Profesores
-      </a>
-      <a href="{{ url_for('curso.index') }}" class="sidebar-link {% if 'curso' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        Cursos
-      </a>
+      <!-- ── Grupo ACADÉMICO ── -->
+      <div class="nav-group">
+        <div class="nav-group-header">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M12 14l9-5-9-5-9 5 9 5zm0 0v6"/>
+          </svg>
+          Académico
+        </div>
+        <div class="nav-group-items">
+          <a href="{{ url_for('gestion.index') }}"
+             class="sidebar-link {% if 'gestion' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Gestiones
+          </a>
+          <a href="{{ url_for('grado.index') }}"
+             class="sidebar-link {% if 'grado' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            Grados
+          </a>
+          <a href="{{ url_for('materia.index') }}"
+             class="sidebar-link {% if 'materia' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            Materias
+          </a>
+          <a href="{{ url_for('profesor.index') }}"
+             class="sidebar-link {% if 'profesor' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Profesores
+          </a>
+          <a href="{{ url_for('curso.index') }}"
+             class="sidebar-link {% if 'curso' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Cursos
+          </a>
+        </div>
+      </div>
 
-      <p class="nav-section">Estudiantes</p>
-      <a href="{{ url_for('alumno.index') }}" class="sidebar-link {% if 'alumno' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        Alumnos
-      </a>
-      <a href="{{ url_for('inscrito.index') }}" class="sidebar-link {% if 'inscrito' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        Inscripciones
-      </a>
-      <a href="{{ url_for('nota.index') }}" class="sidebar-link {% if 'nota' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-        Calificaciones
-      </a>
-      <a href="{{ url_for('pago.index') }}" class="sidebar-link {% if 'pago' in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-        Pagos
-      </a>
+      <!-- ── Grupo ESTUDIANTES ── -->
+      <div class="nav-group">
+        <div class="nav-group-header">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M17 20h2a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2m10 0H7m5-4v4m0 0l-2-2m2 2l2-2"/>
+          </svg>
+          Estudiantes
+        </div>
+        <div class="nav-group-items">
+          <a href="{{ url_for('alumno.index') }}"
+             class="sidebar-link {% if 'alumno' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            Alumnos
+          </a>
+          <a href="{{ url_for('inscrito.index') }}"
+             class="sidebar-link {% if 'inscrito' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            Inscripciones
+          </a>
+          <a href="{{ url_for('nota.index') }}"
+             class="sidebar-link {% if 'nota' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Calificaciones
+          </a>
+          <a href="{{ url_for('pago.index') }}"
+             class="sidebar-link {% if 'pago' in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            Pagos
+          </a>
+        </div>
+      </div>
 
+      <!-- ── Grupo ADMINISTRACIÓN (solo admin) ── -->
       {% if current_user.has_role('administrador') %}
-      <p class="nav-section">Administración</p>
-      <a href="{{ url_for('admin.usuarios') }}" class="sidebar-link {% if request.endpoint and request.endpoint.startswith('admin.') and 'profesor' not in request.endpoint %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        Usuarios y Roles
-      </a>
-      <a href="{{ url_for('admin.asignar_profesor') }}" class="sidebar-link {% if request.endpoint == 'admin.asignar_profesor' or request.endpoint == 'admin.desvincular_profesor' %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-        Asignar Usuario Profesor
-      </a>
-      <a href="{{ url_for('asignado.index') }}" class="sidebar-link {% if request.endpoint and request.endpoint.startswith('asignado.') %}active{% endif %}">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        Asignaciones Curso-Materia
-      </a>
+      <div class="nav-group" style="border-color: rgba(124,31,62,.35); background: rgba(124,31,62,.06);">
+        <div class="nav-group-header" style="color: #D4849E; border-color: rgba(124,31,62,.25); background: rgba(124,31,62,.1);">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          </svg>
+          Administración
+        </div>
+        <div class="nav-group-items">
+          <a href="{{ url_for('admin.usuarios') }}"
+             class="sidebar-link {% if request.endpoint and request.endpoint.startswith('admin.') and 'profesor' not in request.endpoint %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Usuarios y Roles
+          </a>
+          <a href="{{ url_for('admin.asignar_profesor') }}"
+             class="sidebar-link {% if request.endpoint == 'admin.asignar_profesor' or request.endpoint == 'admin.desvincular_profesor' %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            Asignar Usuario–Profesor
+          </a>
+          <a href="{{ url_for('asignado.index') }}"
+             class="sidebar-link {% if request.endpoint and request.endpoint.startswith('asignado.') %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Asignaciones Curso–Materia
+          </a>
+          <a href="{{ url_for('costo.index') }}"
+             class="sidebar-link {% if request.endpoint and request.endpoint.startswith('costo.') %}active{% endif %}">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Asignación de Costos
+          </a>
+        </div>
+      </div>
       {% endif %}
+
     </nav>
 
     <!-- User footer -->
-    <div class="border-t border-slate-100 p-4 bg-primary-50/60">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+    <div class="flex-shrink-0 p-3" style="border-top: 1px solid rgba(255,255,255,0.07);">
+      <div class="flex items-center gap-3 px-2 py-2 rounded-xl"
+           style="background: rgba(255,255,255,0.05);">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 text-white"
+             style="background: linear-gradient(135deg, #7C1F3E, #B5416A);">
           {{ current_user.usuario[0].upper() }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-slate-800 truncate">{{ current_user.usuario }}</p>
-          <p class="text-xs text-slate-500 truncate">
+          <p class="text-sm font-semibold truncate text-white/90">{{ current_user.usuario }}</p>
+          <p class="text-xs truncate" style="color: #8B7BA0;">
             {% for r in current_user.roles %}{{ r.rol }}{% if not loop.last %}, {% endif %}{% endfor %}
           </p>
         </div>
-        <a href="{{ url_for('auth.logout') }}" class="text-slate-400 hover:text-primary-600 transition-colors" title="Cerrar sesión">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <a href="{{ url_for('auth.logout') }}"
+           title="Cerrar sesión"
+           style="color: #6B5B82;"
+           class="hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
         </a>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN -->
+  <!-- ════════════════════════════════════════════
+       MAIN AREA
+  ════════════════════════════════════════════ -->
   <div class="flex-1 flex flex-col overflow-hidden">
+
     <!-- Top bar -->
-    <header class="bg-white border-b border-slate-100 px-4 lg:px-6 py-3 flex items-center gap-4 shadow-sm">
-      <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden text-slate-500 hover:text-primary-600 transition-colors">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <header class="bg-white border-b border-slate-100 px-4 lg:px-6 h-14 flex items-center gap-4"
+            style="box-shadow: 0 1px 8px rgba(0,0,0,.06);">
+
+      <!-- Hamburger (móvil) -->
+      <button @click="sidebarOpen=!sidebarOpen"
+              class="lg:hidden text-slate-400 hover:text-primary-600 transition-colors p-1">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
       </button>
-      <span class="hidden lg:block w-1 h-6 rounded-full bg-primary-600"></span>
-      <div class="flex-1">
-        <h1 class="font-heading font-bold text-lg text-slate-800">{% block page_title %}{% endblock %}</h1>
+
+      <!-- Acento vertical + título de página -->
+      <div class="hidden lg:flex items-center gap-3">
+        <span class="w-0.5 h-5 rounded-full bg-primary-600 opacity-70"></span>
       </div>
-      <div id="flash-zone" class="flex gap-2">
+      <div class="flex-1">
+        <h1 class="font-heading font-bold text-base text-slate-800 leading-none">
+          {% block page_title %}{% endblock %}
+        </h1>
+      </div>
+
+      <!-- Flash messages -->
+      <div id="flash-zone" class="flex gap-2 overflow-hidden max-w-md">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% for cat, msg in messages %}
-          <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show=false, 4500)"
-               x-transition
-               class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm
-              {% if cat == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200
-              {% elif cat == 'danger' %}bg-red-50 text-red-800 border border-red-200
-              {% else %}bg-primary-50 text-primary-800 border border-primary-200{% endif %}">
+          <div x-data="{ show: true }" x-show="show"
+               x-init="setTimeout(() => show=false, 4500)"
+               x-transition:leave="transition ease-in duration-300"
+               x-transition:leave-start="opacity-100 translate-y-0"
+               x-transition:leave-end="opacity-0 -translate-y-1"
+               class="{% if cat == 'success' %}flash-success{% elif cat == 'danger' %}flash-danger{% else %}flash-info{% endif %}">
+            {% if cat == 'success' %}
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            {% elif cat == 'danger' %}
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01M12 5a7 7 0 100 14A7 7 0 0012 5z"/>
+            </svg>
+            {% endif %}
             {{ msg }}
           </div>
           {% endfor %}
         {% endwith %}
       </div>
-      <a href="{{ url_for('auth.cambiar_password') }}" class="hidden sm:flex items-center gap-1 text-xs text-slate-400 hover:text-primary-600 transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+
+      <!-- Cambiar contraseña -->
+      <a href="{{ url_for('auth.cambiar_password') }}"
+         class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary-600 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
         Contraseña
       </a>
     </header>
 
+    <!-- Content -->
     <main class="flex-1 overflow-y-auto p-4 lg:p-6">
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-slate-100 bg-white px-6 py-2 text-center text-xs text-slate-400">
-      Centro Educativo Cristiano <span class="font-semibold text-primary-600">SHALOM</span> &mdash; Sistema de Gestión Educativa
+    <!-- Footer -->
+    <footer class="border-t border-slate-100 bg-white px-6 py-2 flex items-center justify-center gap-2"
+            style="min-height: 36px;">
+      <span class="text-xs text-slate-400">
+        Centro Educativo Cristiano
+        <span class="font-bold text-primary-600 ml-1">SHALOM</span>
+        <span class="mx-2 text-slate-200">·</span>
+        Sistema de Gestión Educativa
+      </span>
     </footer>
   </div>
 </div>
