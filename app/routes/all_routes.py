@@ -742,3 +742,107 @@ def registrar(id):
     return render_template('pago/form.html', pago=pago,
                            otros_pagos=otros_pagos,
                            today=date.today().isoformat())
+
+
+@pago_bp.route('/genera-plan', methods=['GET', 'POST'])
+@login_required
+def genera_plan():
+    """Genera automáticamente el plan de pagos para todos los alumnos con
+    reserva=True o inscrito=True que aún no tengan cuotas registradas."""
+    from app.decorators import role_required
+    from flask import abort
+    if not current_user.has_role('administrador'):
+        abort(403)
+
+    if request.method == 'POST':
+        # Alumnos con reserva=True o inscrito=True
+        candidatos = Inscrito.query.filter(
+            db.or_(Inscrito.reserva == True, Inscrito.inscrito == True)
+        ).all()
+
+        generados   = 0   # cantidad de alumnos a los que se les generó plan
+        omitidos    = 0   # ya tenían al menos una cuota
+        sin_costo   = 0   # su curso no tiene costos definidos
+        detalle     = []  # lista de dicts para mostrar en el template
+
+        for ins in candidatos:
+            # Verificar si ya tiene pagos
+            tiene_pagos = Pago.query.filter_by(ins_id=ins.id).first()
+            if tiene_pagos:
+                omitidos += 1
+                detalle.append({
+                    'alumno': ins.alumno.nombre_completo,
+                    'estado': 'omitido',
+                    'msg': 'Ya tenía plan de pagos'
+                })
+                continue
+
+            # Obtener los costos del curso
+            costos = (Costo.query
+                      .filter_by(cur_id=ins.cur_id)
+                      .order_by(Costo.nro_cuota)
+                      .all())
+            if not costos:
+                sin_costo += 1
+                detalle.append({
+                    'alumno': ins.alumno.nombre_completo,
+                    'estado': 'sin_costo',
+                    'msg': 'Sin costos definidos para su curso'
+                })
+                continue
+
+            # Calcular cuotas aplicando descuento si corresponde
+            for costo in costos:
+                monto = float(costo.cuota)
+                if ins.descuento and ins.descuento > 0:
+                    # cuota = cuota - (descuento * cuota) / 100
+                    monto = monto - (ins.descuento * monto) / 100
+                    monto = round(monto, 2)
+                p = Pago(
+                    ins_id=ins.id,
+                    nro_cuota=costo.nro_cuota,
+                    cuota=monto,
+                    pagado=False,
+                    metodo_pago='',
+                    fecha_pago=None,
+                    referencia_pago='',
+                    obs='',
+                    creado=date.today(),
+                    act=date.today(),
+                    usu_id=current_user.id
+                )
+                db.session.add(p)
+
+            generados += 1
+            detalle.append({
+                'alumno': ins.alumno.nombre_completo,
+                'estado': 'generado',
+                'msg': f'{len(costos)} cuota(s) generada(s)'
+                       + (f' con {ins.descuento}% de descuento' if ins.descuento else '')
+            })
+
+        db.session.commit()
+        return render_template(
+            'pago/genera_plan.html',
+            ejecutado=True,
+            generados=generados,
+            omitidos=omitidos,
+            sin_costo=sin_costo,
+            detalle=detalle
+        )
+
+    # GET — muestra pantalla de confirmación con vista previa
+    total_candidatos = Inscrito.query.filter(
+        db.or_(Inscrito.reserva == True, Inscrito.inscrito == True)
+    ).count()
+    sin_plan = (Inscrito.query
+                .filter(db.or_(Inscrito.reserva == True, Inscrito.inscrito == True))
+                .filter(~Inscrito.pagos.any())
+                .count())
+
+    return render_template(
+        'pago/genera_plan.html',
+        ejecutado=False,
+        total_candidatos=total_candidatos,
+        sin_plan=sin_plan
+    )
