@@ -682,6 +682,103 @@ def editar(id):
                            es_profesor=es_profesor)
 
 
+@nota_bp.route('/genera-calificaciones', methods=['GET', 'POST'])
+@login_required
+def genera_calificaciones():
+    """Genera automaticamente registros de nota para cada combinacion
+    alumno-inscrito x materia asignada al curso. Solo para administrador."""
+    if not current_user.has_role('administrador'):
+        abort(403)
+
+    cursos = Curso.query.order_by(Curso.gestion.desc(), Curso.paralelo).all()
+
+    if request.method == 'POST':
+        cur_id = request.form.get('cur_id', type=int)
+
+        if cur_id:
+            inscritos    = (Inscrito.query
+                            .filter_by(cur_id=cur_id, inscrito=True, abandono=False)
+                            .all())
+            asignaciones = Asignado.query.filter_by(cur_id=cur_id).all()
+        else:
+            inscritos    = Inscrito.query.filter_by(inscrito=True, abandono=False).all()
+            asignaciones = Asignado.query.all()
+
+        asig_por_curso = {}
+        for a in asignaciones:
+            asig_por_curso.setdefault(a.cur_id, []).append(a)
+
+        generadas = 0
+        omitidas  = 0
+        sin_asig  = 0
+        detalle   = []
+
+        for ins in inscritos:
+            asigs_curso = asig_por_curso.get(ins.cur_id, [])
+            if not asigs_curso:
+                sin_asig += 1
+                detalle.append({
+                    'alumno':  ins.alumno.nombre_completo,
+                    'materia': '\u2014',
+                    'estado':  'sin_asig',
+                    'msg':     'Curso sin materias asignadas',
+                })
+                continue
+
+            for asig in asigs_curso:
+                existe = Nota.query.filter_by(ins_id=ins.id, mat_id=asig.mat_id).first()
+                if existe:
+                    omitidas += 1
+                    detalle.append({
+                        'alumno':  ins.alumno.nombre_completo,
+                        'materia': asig.materia.materia,
+                        'estado':  'omitido',
+                        'msg':     'Ya existia el registro',
+                    })
+                    continue
+
+                n = Nota(
+                    ins_id=ins.id,
+                    mat_id=asig.mat_id,
+                    nota1=0, nota2=0, nota3=0,
+                    nota_final=0,
+                    nota_aprob=51,
+                    aprobado=False,
+                    obs='',
+                    creado=date.today(),
+                    act=date.today(),
+                    usu_id=current_user.id,
+                )
+                db.session.add(n)
+                generadas += 1
+                detalle.append({
+                    'alumno':  ins.alumno.nombre_completo,
+                    'materia': asig.materia.materia,
+                    'estado':  'generado',
+                    'msg':     'Registro creado',
+                })
+
+        db.session.commit()
+
+        curso_sel = Curso.query.get(cur_id) if cur_id else None
+        return render_template(
+            'nota/genera_calificaciones.html',
+            ejecutado=True,
+            generadas=generadas,
+            omitidas=omitidas,
+            sin_asig=sin_asig,
+            detalle=detalle,
+            cursos=cursos,
+            curso_sel=curso_sel,
+        )
+
+    return render_template(
+        'nota/genera_calificaciones.html',
+        ejecutado=False,
+        cursos=cursos,
+    )
+
+
 # ── PAGO ──────────────────────────────────────────────────
 pago_bp = Blueprint('pago', __name__, url_prefix='/pago')
 
