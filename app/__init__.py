@@ -35,6 +35,7 @@ def create_app(config_class=Config):
     from app.routes.asignado import asignado_bp
     from app.routes.costo import costo_bp
     from app.routes.anulacion import anulacion_bp
+    from app.routes.historial import historial_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -51,5 +52,6 @@ def create_app(config_class=Config):
     app.register_blueprint(asignado_bp)
     app.register_blueprint(costo_bp)
     app.register_blueprint(anulacion_bp)
+    app.register_blueprint(historial_bp)
 
     return app

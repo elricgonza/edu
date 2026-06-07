@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db, bcrypt
 from app.models import Usuario
+from app.audit import log_accion
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -22,8 +23,10 @@ def login():
             user.last_login = date.today()
             db.session.commit()
             login_user(user, remember=request.form.get('remember'))
+            log_accion('LOGIN', 'auth', detalle={'usuario': user.usuario, 'email': user.email})
             next_page = request.args.get('next')
             return redirect(next_page or url_for('dashboard.index'))
+        log_accion('ERROR', 'auth', status=401, detalle={'usuario_intentado': username, 'motivo': 'credenciales incorrectas'})
         flash('Usuario o contraseña incorrectos.', 'danger')
     return render_template('auth/login.html')
 
@@ -31,6 +34,7 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    log_accion('LOGOUT', 'auth', detalle={'usuario': current_user.usuario})
     logout_user()
     flash('Sesión cerrada correctamente.', 'success')
     return redirect(url_for('auth.login'))
@@ -52,6 +56,7 @@ def cambiar_password():
         else:
             current_user.password = bcrypt.generate_password_hash(nueva).decode('utf-8')
             db.session.commit()
+            log_accion('UPDATE', 'auth', detalle={'accion': 'cambio_password', 'usuario': current_user.usuario})
             flash('Contraseña actualizada correctamente.', 'success')
             return redirect(url_for('dashboard.index'))
     return render_template('auth/cambiar_password.html')

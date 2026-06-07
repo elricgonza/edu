@@ -4,6 +4,8 @@ from flask_login import login_required, current_user
 from app import db
 from app.models import Grado, Gestion, Materia, Profesor, Curso, Alumno, Inscrito, Asignado, Nota, Pago, Costo
 from app.decorators import permission_required
+from app.audit import log_accion
+from flask import abort
 
 PER_PAGE = 10   # Registros por página en todas las listas
 
@@ -51,6 +53,7 @@ def nuevo():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(g); db.session.commit()
+        log_accion('CREATE', 'grado', entidad_id=g.id, detalle={'grado': g.grado, 'nivel': g.nivel})
         flash('Grado creado.', 'success')
         return redirect(url_for('grado.index'))
     return render_template('grado/form.html', grado=None, gestiones=gestiones)
@@ -64,7 +67,9 @@ def editar(id):
     if request.method == 'POST':
         g.grado = request.form['grado']; g.nivel = request.form['nivel']
         g.ges_id = int(request.form['ges_id']); g.act = date.today()
-        db.session.commit(); flash('Grado actualizado.', 'success')
+        db.session.commit()
+        log_accion('UPDATE', 'grado', entidad_id=g.id, detalle={'grado': g.grado, 'nivel': g.nivel})
+        flash('Grado actualizado.', 'success')
         return redirect(url_for('grado.index'))
     return render_template('grado/form.html', grado=g, gestiones=gestiones)
 
@@ -75,6 +80,7 @@ def eliminar(id):
     g = Grado.query.get_or_404(id)
     try:
         db.session.delete(g); db.session.commit()
+        log_accion('DELETE', 'grado', entidad_id=g.id, detalle={'grado': g.grado})
         flash('Grado eliminado.', 'success')
     except Exception:
         db.session.rollback(); flash('No se puede eliminar: tiene registros relacionados.', 'danger')
@@ -119,6 +125,7 @@ def nueva():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(m); db.session.commit()
+        log_accion('CREATE', 'materia', entidad_id=m.id, detalle={'materia': m.materia})
         flash('Materia creada.', 'success')
         return redirect(url_for('materia.index'))
     return render_template('materia/form.html', materia=None, grados=grados)
@@ -132,6 +139,7 @@ def editar(id):
     if request.method == 'POST':
         m.materia = request.form['materia']; m.gra_id = int(request.form['gra_id'])
         m.act = date.today(); db.session.commit()
+        log_accion('UPDATE', 'materia', entidad_id=m.id, detalle={'materia': m.materia})
         flash('Materia actualizada.', 'success')
         return redirect(url_for('materia.index'))
     return render_template('materia/form.html', materia=m, grados=grados)
@@ -142,7 +150,9 @@ def editar(id):
 def eliminar(id):
     m = Materia.query.get_or_404(id)
     try:
-        db.session.delete(m); db.session.commit(); flash('Materia eliminada.', 'success')
+        db.session.delete(m); db.session.commit()
+        log_accion('DELETE', 'materia', entidad_id=m.id, detalle={'materia': m.materia})
+        flash('Materia eliminada.', 'success')
     except Exception:
         db.session.rollback(); flash('No se puede eliminar: tiene registros relacionados.', 'danger')
     return redirect(url_for('materia.index'))
@@ -198,6 +208,7 @@ def nuevo():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(p); db.session.commit()
+        log_accion('CREATE', 'profesor', entidad_id=p.id, detalle={'nombre': p.nombre_completo, 'ci': p.ci})
         flash('Profesor registrado.', 'success')
         return redirect(url_for('profesor.index'))
     return render_template('profesor/form.html', profesor=None)
@@ -214,7 +225,9 @@ def editar(id):
         p.ci = request.form.get('ci') or None
         p.formacion = request.form.get('formacion'); p.email = request.form.get('email')
         p.activo = 'activo' in request.form; p.act = date.today()
-        db.session.commit(); flash('Profesor actualizado.', 'success')
+        db.session.commit()
+        log_accion('UPDATE', 'profesor', entidad_id=p.id, detalle={'nombre': p.nombre_completo, 'activo': p.activo})
+        flash('Profesor actualizado.', 'success')
         return redirect(url_for('profesor.index'))
     return render_template('profesor/form.html', profesor=p)
 
@@ -224,7 +237,9 @@ def editar(id):
 def eliminar(id):
     p = Profesor.query.get_or_404(id)
     try:
-        db.session.delete(p); db.session.commit(); flash('Profesor eliminado.', 'success')
+        db.session.delete(p); db.session.commit()
+        log_accion('DELETE', 'profesor', entidad_id=p.id, detalle={'nombre': p.nombre_completo})
+        flash('Profesor eliminado.', 'success')
     except Exception:
         db.session.rollback(); flash('No se puede eliminar: tiene asignaciones.', 'danger')
     return redirect(url_for('profesor.index'))
@@ -336,6 +351,7 @@ def nuevo():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(a); db.session.commit()
+        log_accion('CREATE', 'alumno', entidad_id=a.id, detalle={'nombre': a.nombre_completo, 'ci': a.ci})
         flash('Alumno registrado.', 'success')
         return redirect(url_for('alumno.index'))
     return render_template('alumno/form.html', alumno=None)
@@ -346,14 +362,44 @@ def nuevo():
 def editar(id):
     a = Alumno.query.get_or_404(id)
     if request.method == 'POST':
-        a.nombre = request.form['nombre']; a.paterno = request.form.get('paterno')
-        a.materno = request.form.get('materno')
+        # Capturar estado anterior ANTES de modificar
+        antes = {
+            'nombre':     a.nombre_completo,
+            'ci':         a.ci,
+            'nacimiento': str(a.nacimiento) if a.nacimiento else None,
+            'masculino':  a.masculino,
+            'direccion':  a.direccion,
+            'email':      a.email,
+            'activo':     a.activo,
+            'obs':        a.obs,
+        }
+        a.nombre     = request.form['nombre']
+        a.paterno    = request.form.get('paterno')
+        a.materno    = request.form.get('materno')
         a.nacimiento = date.fromisoformat(request.form['nacimiento']) if request.form.get('nacimiento') else None
-        a.masculino = request.form.get('genero') == 'M'
-        a.ci = request.form.get('ci') or None
-        a.direccion = request.form.get('direccion'); a.email = request.form.get('email')
-        a.activo = 'activo' in request.form; a.obs = request.form.get('obs')
-        a.act = date.today(); db.session.commit()
+        a.masculino  = request.form.get('genero') == 'M'
+        a.ci         = request.form.get('ci') or None
+        a.direccion  = request.form.get('direccion')
+        a.email      = request.form.get('email')
+        a.activo     = 'activo' in request.form
+        a.obs        = request.form.get('obs')
+        a.act        = date.today()
+        db.session.commit()
+        # Registrar solo los campos que realmente cambiaron
+        despues = {
+            'nombre':     a.nombre_completo,
+            'ci':         a.ci,
+            'nacimiento': str(a.nacimiento) if a.nacimiento else None,
+            'masculino':  a.masculino,
+            'direccion':  a.direccion,
+            'email':      a.email,
+            'activo':     a.activo,
+            'obs':        a.obs,
+        }
+        cambios = {k: {'antes': antes[k], 'despues': despues[k]}
+                   for k in antes if antes[k] != despues[k]}
+        log_accion('UPDATE', 'alumno', entidad_id=a.id,
+                   detalle={'alumno': a.nombre_completo, 'cambios': cambios})
         flash('Alumno actualizado.', 'success')
         return redirect(url_for('alumno.index'))
     return render_template('alumno/form.html', alumno=a)
@@ -436,6 +482,7 @@ def nuevo():
                          pagado=False, creado=date.today(), act=date.today(), usu_id=current_user.id)
                 db.session.add(p)
         db.session.commit()
+        log_accion('CREATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'cur_id': ins.cur_id, 'inscrito': ins.inscrito, 'reserva': ins.reserva})
         flash('Inscripción realizada. Plan de pagos generado.', 'success')
         return redirect(url_for('inscrito.index'))
     return render_template('inscrito/form.html', inscrito=None, alumnos=alumnos, cursos=cursos)
@@ -455,7 +502,9 @@ def editar(id):
         ins.motivo_descuento = request.form.get('motivo_descuento')
         ins.abandono = 'abandono' in request.form
         ins.obs = request.form.get('obs'); ins.act = date.today()
-        db.session.commit(); flash('Inscripción actualizada.', 'success')
+        db.session.commit()
+        log_accion('UPDATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'inscrito': ins.inscrito, 'abandono': ins.abandono, 'descuento': ins.descuento})
+        flash('Inscripción actualizada.', 'success')
         return redirect(url_for('inscrito.index'))
     return render_template('inscrito/form.html', inscrito=ins, alumnos=alumnos, cursos=cursos)
 
@@ -622,6 +671,7 @@ def nueva():
             creado=date.today(), act=date.today(), usu_id=current_user.id
         )
         db.session.add(n); db.session.commit()
+        log_accion('CREATE', 'nota', entidad_id=n.id, detalle={'ins_id': n.ins_id, 'mat_id': n.mat_id, 'nota_final': float(n.nota_final), 'aprobado': n.aprobado})
         flash('Nota registrada.', 'success')
         return redirect(url_for('nota.index'))
 
@@ -674,109 +724,13 @@ def editar(id):
         n.obs        = request.form.get('obs')
         n.act        = date.today()
         db.session.commit()
+        log_accion('UPDATE', 'nota', entidad_id=n.id, detalle={'ins_id': n.ins_id, 'mat_id': n.mat_id, 'nota1': n.nota1, 'nota2': n.nota2, 'nota3': n.nota3, 'nota_final': float(n.nota_final), 'aprobado': n.aprobado})
         flash('Nota actualizada.', 'success')
         return redirect(url_for('nota.index', cur_id=n.inscrito.cur_id))
 
     return render_template('nota/form.html', nota=n,
                            inscritos=inscritos, materias=materias,
                            es_profesor=es_profesor)
-
-
-@nota_bp.route('/genera-calificaciones', methods=['GET', 'POST'])
-@login_required
-def genera_calificaciones():
-    """Genera automaticamente registros de nota para cada combinacion
-    alumno-inscrito x materia asignada al curso. Solo para administrador."""
-    if not current_user.has_role('administrador'):
-        abort(403)
-
-    cursos = Curso.query.order_by(Curso.gestion.desc(), Curso.paralelo).all()
-
-    if request.method == 'POST':
-        cur_id = request.form.get('cur_id', type=int)
-
-        if cur_id:
-            inscritos    = (Inscrito.query
-                            .filter_by(cur_id=cur_id, inscrito=True, abandono=False)
-                            .all())
-            asignaciones = Asignado.query.filter_by(cur_id=cur_id).all()
-        else:
-            inscritos    = Inscrito.query.filter_by(inscrito=True, abandono=False).all()
-            asignaciones = Asignado.query.all()
-
-        asig_por_curso = {}
-        for a in asignaciones:
-            asig_por_curso.setdefault(a.cur_id, []).append(a)
-
-        generadas = 0
-        omitidas  = 0
-        sin_asig  = 0
-        detalle   = []
-
-        for ins in inscritos:
-            asigs_curso = asig_por_curso.get(ins.cur_id, [])
-            if not asigs_curso:
-                sin_asig += 1
-                detalle.append({
-                    'alumno':  ins.alumno.nombre_completo,
-                    'materia': '\u2014',
-                    'estado':  'sin_asig',
-                    'msg':     'Curso sin materias asignadas',
-                })
-                continue
-
-            for asig in asigs_curso:
-                existe = Nota.query.filter_by(ins_id=ins.id, mat_id=asig.mat_id).first()
-                if existe:
-                    omitidas += 1
-                    detalle.append({
-                        'alumno':  ins.alumno.nombre_completo,
-                        'materia': asig.materia.materia,
-                        'estado':  'omitido',
-                        'msg':     'Ya existia el registro',
-                    })
-                    continue
-
-                n = Nota(
-                    ins_id=ins.id,
-                    mat_id=asig.mat_id,
-                    nota1=0, nota2=0, nota3=0,
-                    nota_final=0,
-                    nota_aprob=51,
-                    aprobado=False,
-                    obs='',
-                    creado=date.today(),
-                    act=date.today(),
-                    usu_id=current_user.id,
-                )
-                db.session.add(n)
-                generadas += 1
-                detalle.append({
-                    'alumno':  ins.alumno.nombre_completo,
-                    'materia': asig.materia.materia,
-                    'estado':  'generado',
-                    'msg':     'Registro creado',
-                })
-
-        db.session.commit()
-
-        curso_sel = Curso.query.get(cur_id) if cur_id else None
-        return render_template(
-            'nota/genera_calificaciones.html',
-            ejecutado=True,
-            generadas=generadas,
-            omitidas=omitidas,
-            sin_asig=sin_asig,
-            detalle=detalle,
-            cursos=cursos,
-            curso_sel=curso_sel,
-        )
-
-    return render_template(
-        'nota/genera_calificaciones.html',
-        ejecutado=False,
-        cursos=cursos,
-    )
 
 
 # ── PAGO ──────────────────────────────────────────────────
@@ -832,6 +786,7 @@ def registrar(id):
         pago.obs = request.form.get('obs')
         pago.act = date.today(); pago.usu_id = current_user.id
         db.session.commit()
+        log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={'ins_id': pago.ins_id, 'nro_cuota': pago.nro_cuota, 'cuota': pago.cuota, 'metodo_pago': pago.metodo_pago, 'fecha_pago': str(pago.fecha_pago)})
         flash(f'Cuota {pago.nro_cuota} registrada como pagada.', 'success')
         ins = Inscrito.query.get(pago.ins_id)
         return redirect(url_for('pago.index', alu_id=ins.alu_id))
@@ -919,6 +874,7 @@ def genera_plan():
             })
 
         db.session.commit()
+        log_accion('BULK', 'pago', detalle={'accion': 'genera_plan', 'generados': generados, 'omitidos': omitidos, 'sin_costo': sin_costo})
         return render_template(
             'pago/genera_plan.html',
             ejecutado=True,

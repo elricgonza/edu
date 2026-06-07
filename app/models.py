@@ -272,3 +272,22 @@ class Pago(db.Model):
     creado          = db.Column(db.Date, nullable=False, default=date.today)
     act             = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
     usu_id          = db.Column(db.Integer, nullable=False)
+
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_log'
+
+    id         = db.Column(db.Integer, primary_key=True)
+    usu_id     = db.Column(db.Integer, db.ForeignKey('usuario.id', ondelete='SET NULL'), nullable=True)
+    usuario    = db.Column(db.String(80), nullable=False, default='anónimo')
+    accion     = db.Column(db.String(20), nullable=False)   # CREATE UPDATE DELETE LOGIN LOGOUT BULK ERROR
+    modulo     = db.Column(db.String(50), nullable=False)   # grado, materia, alumno, pago, ...
+    entidad_id = db.Column(db.Integer, nullable=True)
+    detalle    = db.Column(db.Text, nullable=True)          # JSON con datos relevantes
+    ip         = db.Column(db.String(45), nullable=True)
+    endpoint   = db.Column(db.String(150), nullable=True)
+    metodo     = db.Column(db.String(10), nullable=True)
+    status     = db.Column(db.SmallInteger, nullable=True, default=200)
+    creado     = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    autor = db.relationship('Usuario', backref='audit_logs', foreign_keys=[usu_id])
