@@ -47,18 +47,118 @@
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  {% block head_extra %}{% endblock %}
+
   <style>
-    [x-cloak] { display: none !important; }
-    body { font-family: 'Nunito Sans', sans-serif; }
+    /* ══════════════════════════════════════════════════════
+       SISTEMA DE TEMAS — variables CSS por tema
+    ══════════════════════════════════════════════════════ */
+
+    /* Modo Día (predeterminado) */
+    :root,
+    [data-theme="dia"] {
+      --bg:           #f8fafc;
+      --surface:      #ffffff;
+      --surface-2:    #f1f5f9;
+      --border:       #e2e8f0;
+      --text-primary: #0f172a;
+      --text-muted:   #64748b;
+      --input-bg:     #f8fafc;
+      --card-shadow:  0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+      --topbar-bg:    #ffffff;
+      --topbar-border:#e2e8f0;
+      --footer-bg:    #ffffff;
+      --scrollbar:    #cbd5e1;
+      --table-hover:  rgba(124,31,62,.04);
+      --flash-pos:    ;
+    }
+
+    /* Modo Oscuro */
+    [data-theme="oscuro"] {
+      --bg:           #0d1117;
+      --surface:      #161b22;
+      --surface-2:    #21262d;
+      --border:       #30363d;
+      --text-primary: #e6edf3;
+      --text-muted:   #8b949e;
+      --input-bg:     #21262d;
+      --card-shadow:  0 1px 3px rgba(0,0,0,.4), 0 1px 8px rgba(0,0,0,.3);
+      --topbar-bg:    #161b22;
+      --topbar-border:#30363d;
+      --footer-bg:    #161b22;
+      --scrollbar:    #30363d;
+      --table-hover:  rgba(124,31,62,.12);
+    }
+
+    /* Modo Medianoche */
+    [data-theme="medianoche"] {
+      --bg:           #06070a;
+      --surface:      #0e1117;
+      --surface-2:    #161b22;
+      --border:       #1e2430;
+      --text-primary: #ccd6f6;
+      --text-muted:   #6272a4;
+      --input-bg:     #0d1117;
+      --card-shadow:  0 2px 12px rgba(0,0,0,.6);
+      --topbar-bg:    #0e1117;
+      --topbar-border:#1e2430;
+      --footer-bg:    #0e1117;
+      --scrollbar:    #1e2430;
+      --table-hover:  rgba(124,31,62,.14);
+    }
+
+    /* Modo Sepia */
+    [data-theme="sepia"] {
+      --bg:           #f4ece0;
+      --surface:      #fdf6ec;
+      --surface-2:    #ede3d4;
+      --border:       #d9c9b2;
+      --text-primary: #3b2f1e;
+      --text-muted:   #7a6248;
+      --input-bg:     #f4ece0;
+      --card-shadow:  0 1px 3px rgba(100,60,0,.1);
+      --topbar-bg:    #fdf6ec;
+      --topbar-border:#d9c9b2;
+      --footer-bg:    #fdf6ec;
+      --scrollbar:    #c9b99e;
+      --table-hover:  rgba(124,31,62,.06);
+    }
+
+    /* Modo Alto Contraste */
+    [data-theme="contraste"] {
+      --bg:           #000000;
+      --surface:      #111111;
+      --surface-2:    #1a1a1a;
+      --border:       #ffffff;
+      --text-primary: #ffffff;
+      --text-muted:   #cccccc;
+      --input-bg:     #111111;
+      --card-shadow:  0 0 0 1px #ffffff;
+      --topbar-bg:    #111111;
+      --topbar-border:#ffffff;
+      --footer-bg:    #111111;
+      --scrollbar:    #444444;
+      --table-hover:  rgba(255,255,255,.08);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       APLICAR VARIABLES AL DOM
+    ══════════════════════════════════════════════════════ */
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Nunito Sans', sans-serif;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
     h1,h2,h3,h4,h5 { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    [x-cloak] { display: none !important; }
 
     .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
     .htmx-request .htmx-indicator { opacity: 1; }
 
     /* ── Sidebar ────────────────────────────────── */
-    .sidebar-base {
-      background: #1A1028;
-    }
+    .sidebar-base { background: #1A1028; }
     .nav-group {
       margin-top: 6px;
       border-radius: 10px;
@@ -79,9 +179,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.05);
       background: rgba(255,255,255,0.025);
     }
-    .nav-group-header svg {
-      opacity: .6;
-    }
+    .nav-group-header svg { opacity: .6; }
     .nav-group-items {
       padding: 4px 6px 6px;
       display: flex;
@@ -111,20 +209,68 @@
     }
     .sidebar-link.active svg { opacity: 1; }
 
+    /* ── Botones de tema ────────────────────────── */
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #B8A8C8;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: background 150ms, color 150ms;
+      text-align: left;
+    }
+    .theme-btn:hover { background: rgba(255,255,255,0.07); color: #E8D8F8; }
+    .theme-btn.active-theme {
+      background: rgba(124,31,62,.25);
+      color: #F2BAC9;
+      font-weight: 600;
+    }
+    .theme-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.2);
+      flex-shrink: 0;
+    }
+
     /* ── Buttons ────────────────────────────────── */
     .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2; }
     .btn-primary   { @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500; }
-    .btn-secondary { @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400; }
+    .btn-secondary { @apply btn text-slate-700 hover:bg-slate-200 focus:ring-slate-400; background: var(--surface-2); }
     .btn-danger    { @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; }
     .btn-success   { @apply btn bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; }
 
     /* ── Cards ──────────────────────────────────── */
-    .card { @apply bg-white rounded-2xl shadow-sm border border-slate-100 p-6; }
+    .card {
+      background: var(--surface);
+      border-radius: 1rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      transition: background 0.25s ease, border-color 0.25s ease;
+    }
 
     /* ── Forms ──────────────────────────────────── */
-    .form-label  { @apply block text-sm font-semibold text-slate-700 mb-1; }
-    .form-input  { @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition; }
-    .form-select { @apply form-input bg-white; }
+    .form-label  { @apply block text-sm font-semibold mb-1; color: var(--text-primary); }
+    .form-input  {
+      @apply w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+    }
+    .form-select { @apply form-input; }
+
+    /* Inputs nativos en modo oscuro */
+    input, select, textarea {
+      color-scheme: inherit;
+    }
 
     /* ── Badges ─────────────────────────────────── */
     .badge        { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
@@ -132,31 +278,87 @@
     .badge-red    { @apply badge bg-red-100 text-red-800; }
     .badge-blue   { @apply badge bg-blue-100 text-blue-800; }
     .badge-yellow { @apply badge bg-amber-100 text-amber-800; }
-    .badge-gray   { @apply badge bg-slate-100 text-slate-700; }
+    .badge-gray   { @apply badge; background: var(--surface-2); color: var(--text-muted); }
     .badge-guindo { @apply badge bg-primary-100 text-primary-800; }
 
     /* ── Table ──────────────────────────────────── */
-    .table-header { @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider; }
-    .table-cell   { @apply px-4 py-3 text-sm text-slate-700; }
-    .table-row    { @apply border-t border-slate-100 hover:bg-primary-50/50 transition-colors; }
+    .table-header { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider; color: var(--text-muted); }
+    .table-cell   { @apply px-4 py-3 text-sm; color: var(--text-primary); }
+    .table-row    { border-top: 1px solid var(--border); transition: background 150ms; }
+    .table-row:hover { background: var(--table-hover); }
 
     /* ── Flash ──────────────────────────────────── */
     .flash-success { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-emerald-50 text-emerald-800 border border-emerald-200; }
     .flash-danger  { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-red-50 text-red-800 border border-red-200; }
     .flash-info    { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm bg-primary-50 text-primary-800 border border-primary-200; }
 
-    /* ── Scrollbar sidebar ──────────────────────── */
+    /* Flash oscuro */
+    [data-theme="oscuro"] .flash-success,
+    [data-theme="medianoche"] .flash-success {
+      background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(16,185,129,.3);
+    }
+    [data-theme="oscuro"] .flash-danger,
+    [data-theme="medianoche"] .flash-danger {
+      background: rgba(239,68,68,.15); color: #fca5a5; border-color: rgba(239,68,68,.3);
+    }
+    [data-theme="oscuro"] .flash-info,
+    [data-theme="medianoche"] .flash-info {
+      background: rgba(124,31,62,.2); color: #F2BAC9; border-color: rgba(124,31,62,.35);
+    }
+
+    /* ── Scrollbars ─────────────────────────────── */
     #sidebar-nav::-webkit-scrollbar { width: 4px; }
     #sidebar-nav::-webkit-scrollbar-track { background: transparent; }
     #sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
-    /* ── Main scrollbar ─────────────────────────── */
     main::-webkit-scrollbar { width: 6px; }
-    main::-webkit-scrollbar-track { background: #f8fafc; }
-    main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    main::-webkit-scrollbar-track { background: var(--bg); }
+    main::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
+
+    /* ── Transición suave al cambiar tema ────────── */
+    *, *::before, *::after {
+      transition-property: background-color, border-color, color, box-shadow;
+      transition-duration: 0.2s;
+      transition-timing-function: ease;
+    }
+    /* Excluir transiciones en svg paths para no verse raro */
+    svg *, svg path { transition: none; }
+
+    /* ── Panel de temas (dropdown) ───────────────── */
+    .theme-panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 200px;
+      border-radius: 12px;
+      padding: 8px;
+      background: #1A1028;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 12px 32px rgba(0,0,0,.45);
+      z-index: 100;
+    }
+    .theme-panel-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #8B7BA0;
+      padding: 4px 10px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 6px;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
+<body class="min-h-screen">
+
+<!-- Script de tema: aplica ANTES del renderizado para evitar flash -->
+<script>
+  (function () {
+    const saved = localStorage.getItem('edu-theme') || 'dia';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.body.setAttribute('data-theme', saved);
+  })();
+</script>
 
 {% if current_user.is_authenticated %}
 <div class="flex h-screen overflow-hidden">
@@ -191,7 +393,7 @@
     <!-- Nav -->
     <nav id="sidebar-nav" class="flex-1 overflow-y-auto px-3 py-3 space-y-1">
 
-      <!-- Panel principal (suelto, destacado) -->
+      <!-- Panel principal -->
       <a href="{{ url_for('dashboard.index') }}"
          class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
          style="{% if request.endpoint != 'dashboard.index' %}background:rgba(255,255,255,0.04);{% endif %}">
@@ -372,6 +574,20 @@
       </div>
       {% endif %}
 
+      <!-- ── APARIENCIA (siempre visible) ── -->
+      <div class="nav-group" style="border-color:rgba(255,255,255,.04);">
+        <div class="nav-group-header">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+          </svg>
+          Apariencia
+        </div>
+        <div class="nav-group-items" id="theme-buttons">
+          <!-- Generados por JS para evitar flash de tema incorrecto -->
+        </div>
+      </div>
+
     </nav>
 
     <!-- User footer -->
@@ -407,23 +623,24 @@
   <div class="flex-1 flex flex-col overflow-hidden">
 
     <!-- Top bar -->
-    <header class="bg-white border-b border-slate-100 px-4 lg:px-6 h-14 flex items-center gap-4"
-            style="box-shadow: 0 1px 8px rgba(0,0,0,.06);">
+    <header class="border-b px-4 lg:px-6 h-14 flex items-center gap-4"
+            style="background:var(--topbar-bg); border-color:var(--topbar-border); box-shadow:0 1px 8px rgba(0,0,0,.06);">
 
       <!-- Hamburger (móvil) -->
       <button @click="sidebarOpen=!sidebarOpen"
-              class="lg:hidden text-slate-400 hover:text-primary-600 transition-colors p-1">
+              class="lg:hidden transition-colors p-1"
+              style="color:var(--text-muted);">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
 
-      <!-- Acento vertical + título de página -->
+      <!-- Acento vertical + título -->
       <div class="hidden lg:flex items-center gap-3">
         <span class="w-0.5 h-5 rounded-full bg-primary-600 opacity-70"></span>
       </div>
       <div class="flex-1">
-        <h1 class="font-heading font-bold text-base text-slate-800 leading-none">
+        <h1 class="font-heading font-bold text-base leading-none" style="color:var(--text-primary);">
           {% block page_title %}{% endblock %}
         </h1>
       </div>
@@ -455,7 +672,8 @@
 
       <!-- Cambiar contraseña -->
       <a href="{{ url_for('auth.cambiar_password') }}"
-         class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary-600 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50">
+         class="hidden sm:flex items-center gap-1.5 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-primary-50"
+         style="color:var(--text-muted);">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
@@ -470,12 +688,12 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-100 bg-white px-6 py-2 flex items-center justify-center gap-2"
-            style="min-height: 36px;">
-      <span class="text-xs text-slate-400">
+    <footer class="border-t px-6 py-2 flex items-center justify-center gap-2"
+            style="min-height:36px; background:var(--footer-bg); border-color:var(--border);">
+      <span class="text-xs" style="color:var(--text-muted);">
         Centro Educativo Cristiano
         <span class="font-bold text-primary-600 ml-1">SHALOM</span>
-        <span class="mx-2 text-slate-200">·</span>
+        <span class="mx-2" style="color:var(--border);">·</span>
         Sistema de Gestión Educativa
       </span>
     </footer>
@@ -485,6 +703,66 @@
 {% else %}
   {% block auth_content %}{% endblock %}
 {% endif %}
+
+<!-- ════════════════════════════════════════
+     SISTEMA DE TEMAS — lógica JavaScript
+════════════════════════════════════════ -->
+<script>
+(function () {
+  const TEMAS = [
+    { id: 'dia',        label: 'Modo Día',          swatch: '#f8fafc', border: '#e2e8f0' },
+    { id: 'oscuro',     label: 'Modo Oscuro',        swatch: '#161b22', border: '#30363d' },
+    { id: 'medianoche', label: 'Medianoche',         swatch: '#06070a', border: '#1e2430' },
+    { id: 'sepia',      label: 'Modo Sepia',         swatch: '#f4ece0', border: '#d9c9b2' },
+    { id: 'contraste',  label: 'Alto Contraste',     swatch: '#000000', border: '#ffffff' },
+  ];
+
+  function aplicarTema(id) {
+    document.documentElement.setAttribute('data-theme', id);
+    document.body.setAttribute('data-theme', id);
+    localStorage.setItem('edu-theme', id);
+    // Actualizar clases de botones
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active-theme', btn.dataset.tema === id);
+    });
+  }
+
+  function renderBotones() {
+    const container = document.getElementById('theme-buttons');
+    if (!container) return;
+    const actual = localStorage.getItem('edu-theme') || 'dia';
+    container.innerHTML = '';
+    TEMAS.forEach(t => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'theme-btn' + (t.id === actual ? ' active-theme' : '');
+      btn.dataset.tema = t.id;
+      btn.innerHTML = `
+        <span class="theme-swatch" style="background:${t.swatch}; border-color:${t.border};"></span>
+        <span>${t.label}</span>
+        ${t.id === actual ? '<svg class="ml-auto w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+      `;
+      btn.addEventListener('click', () => {
+        aplicarTema(t.id);
+        // Re-renderizar para actualizar el check
+        renderBotones();
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  // Aplica el tema guardado al cargar
+  const saved = localStorage.getItem('edu-theme') || 'dia';
+  aplicarTema(saved);
+
+  // Renderiza los botones cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderBotones);
+  } else {
+    renderBotones();
+  }
+})();
+</script>
 
 </body>
 </html>
