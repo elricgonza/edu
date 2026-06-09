@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
@@ -50,7 +50,7 @@ def nuevo():
         g = Grado(
             grado=request.form['grado'], nivel=request.form['nivel'],
             ges_id=int(request.form['ges_id']),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(g); db.session.commit()
         log_accion('CREATE', 'grado', entidad_id=g.id, detalle={'grado': g.grado, 'nivel': g.nivel})
@@ -66,7 +66,7 @@ def editar(id):
     gestiones = Gestion.query.order_by(Gestion.gestion.desc()).all()
     if request.method == 'POST':
         g.grado = request.form['grado']; g.nivel = request.form['nivel']
-        g.ges_id = int(request.form['ges_id']); g.act = date.today()
+        g.ges_id = int(request.form['ges_id']); g.act = datetime.now()
         db.session.commit()
         log_accion('UPDATE', 'grado', entidad_id=g.id, detalle={'grado': g.grado, 'nivel': g.nivel})
         flash('Grado actualizado.', 'success')
@@ -122,7 +122,7 @@ def nueva():
     if request.method == 'POST':
         m = Materia(
             materia=request.form['materia'], gra_id=int(request.form['gra_id']),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(m); db.session.commit()
         log_accion('CREATE', 'materia', entidad_id=m.id, detalle={'materia': m.materia})
@@ -138,7 +138,7 @@ def editar(id):
     grados = Grado.query.order_by(Grado.grado).all()
     if request.method == 'POST':
         m.materia = request.form['materia']; m.gra_id = int(request.form['gra_id'])
-        m.act = date.today(); db.session.commit()
+        m.act = datetime.now(); db.session.commit()
         log_accion('UPDATE', 'materia', entidad_id=m.id, detalle={'materia': m.materia})
         flash('Materia actualizada.', 'success')
         return redirect(url_for('materia.index'))
@@ -205,7 +205,7 @@ def nuevo():
             formacion=request.form.get('formacion'),
             email=request.form.get('email'),
             activo='activo' in request.form,
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(p); db.session.commit()
         log_accion('CREATE', 'profesor', entidad_id=p.id, detalle={'nombre': p.nombre_completo, 'ci': p.ci})
@@ -224,7 +224,7 @@ def editar(id):
         p.masculino = request.form.get('genero') == 'M'
         p.ci = request.form.get('ci') or None
         p.formacion = request.form.get('formacion'); p.email = request.form.get('email')
-        p.activo = 'activo' in request.form; p.act = date.today()
+        p.activo = 'activo' in request.form; p.act = datetime.now()
         db.session.commit()
         log_accion('UPDATE', 'profesor', entidad_id=p.id, detalle={'nombre': p.nombre_completo, 'activo': p.activo})
         flash('Profesor actualizado.', 'success')
@@ -280,7 +280,7 @@ def nuevo():
             gra_id=int(request.form['gra_id']), aula=request.form.get('aula'),
             capacidad=request.form.get('capacidad') or None,
             gestion=int(request.form['gestion']),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(c); db.session.commit()
         flash('Curso creado.', 'success')
@@ -297,7 +297,7 @@ def editar(id):
         c.curso = request.form.get('curso'); c.paralelo = request.form['paralelo']
         c.gra_id = int(request.form['gra_id']); c.aula = request.form.get('aula')
         c.capacidad = request.form.get('capacidad') or None
-        c.gestion = int(request.form['gestion']); c.act = date.today()
+        c.gestion = int(request.form['gestion']); c.act = datetime.now()
         db.session.commit(); flash('Curso actualizado.', 'success')
         return redirect(url_for('curso.index'))
     return render_template('curso/form.html', curso=c, grados=grados)
@@ -348,7 +348,7 @@ def nuevo():
             ci=request.form.get('ci') or None,
             direccion=request.form.get('direccion'), email=request.form.get('email'),
             activo='activo' in request.form, obs=request.form.get('obs'),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(a); db.session.commit()
         log_accion('CREATE', 'alumno', entidad_id=a.id, detalle={'nombre': a.nombre_completo, 'ci': a.ci})
@@ -383,7 +383,7 @@ def editar(id):
         a.email      = request.form.get('email')
         a.activo     = 'activo' in request.form
         a.obs        = request.form.get('obs')
-        a.act        = date.today()
+        a.act = datetime.now()
         db.session.commit()
         # Registrar solo los campos que realmente cambiaron
         despues = {
@@ -471,7 +471,7 @@ def nuevo():
             descuento=int(request.form.get('descuento', 0)),
             motivo_descuento=request.form.get('motivo_descuento'),
             obs=request.form.get('obs'),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(ins); db.session.flush()
         costo = Costo.query.filter_by(cur_id=ins.cur_id).first()
@@ -479,7 +479,7 @@ def nuevo():
             for i in range(1, costo.nro_cuota + 1):
                 monto = float(costo.cuota) * (1 - ins.descuento / 100)
                 p = Pago(ins_id=ins.id, nro_cuota=i, cuota=round(monto, 2),
-                         pagado=False, creado=date.today(), act=date.today(), usu_id=current_user.id)
+                         pagado=False, creado=datetime.now(), act=datetime.now(), usu_id=current_user.id)
                 db.session.add(p)
         db.session.commit()
         log_accion('CREATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'cur_id': ins.cur_id, 'inscrito': ins.inscrito, 'reserva': ins.reserva})
@@ -501,7 +501,7 @@ def editar(id):
         ins.descuento = int(request.form.get('descuento', 0))
         ins.motivo_descuento = request.form.get('motivo_descuento')
         ins.abandono = 'abandono' in request.form
-        ins.obs = request.form.get('obs'); ins.act = date.today()
+        ins.obs = request.form.get('obs'); ins.act = datetime.now()
         db.session.commit()
         log_accion('UPDATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'inscrito': ins.inscrito, 'abandono': ins.abandono, 'descuento': ins.descuento})
         flash('Inscripción actualizada.', 'success')
@@ -668,7 +668,7 @@ def nueva():
             nota_final=nota_final, nota_aprob=aprob,
             aprobado=nota_final >= aprob,
             obs=request.form.get('obs'),
-            creado=date.today(), act=date.today(), usu_id=current_user.id
+            creado=datetime.now(), act=datetime.now(), usu_id=current_user.id
         )
         db.session.add(n); db.session.commit()
         log_accion('CREATE', 'nota', entidad_id=n.id, detalle={'ins_id': n.ins_id, 'mat_id': n.mat_id, 'nota_final': float(n.nota_final), 'aprobado': n.aprobado})
@@ -722,7 +722,7 @@ def editar(id):
         n.nota_aprob = int(request.form.get('nota_aprob', 51))
         n.aprobado   = n.nota_final >= n.nota_aprob
         n.obs        = request.form.get('obs')
-        n.act        = date.today()
+        n.act = datetime.now()
         db.session.commit()
         log_accion('UPDATE', 'nota', entidad_id=n.id, detalle={'ins_id': n.ins_id, 'mat_id': n.mat_id, 'nota1': n.nota1, 'nota2': n.nota2, 'nota3': n.nota3, 'nota_final': float(n.nota_final), 'aprobado': n.aprobado})
         flash('Nota actualizada.', 'success')
@@ -781,10 +781,10 @@ def registrar(id):
     if request.method == 'POST':
         pago.pagado = True
         pago.metodo_pago = request.form.get('metodo_pago')
-        pago.fecha_pago = date.fromisoformat(request.form['fecha_pago'])
+        pago.fecha_pago = datetime.fromisoformat(request.form['fecha_pago'])
         pago.referencia_pago = request.form.get('referencia_pago')
         pago.obs = request.form.get('obs')
-        pago.act = date.today(); pago.usu_id = current_user.id
+        pago.act = datetime.now(); pago.usu_id = current_user.id
         db.session.commit()
         log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={'ins_id': pago.ins_id, 'nro_cuota': pago.nro_cuota, 'cuota': pago.cuota, 'metodo_pago': pago.metodo_pago, 'fecha_pago': str(pago.fecha_pago)})
         flash(f'Cuota {pago.nro_cuota} registrada como pagada.', 'success')
@@ -793,7 +793,7 @@ def registrar(id):
     otros_pagos = Pago.query.filter_by(ins_id=pago.ins_id).order_by(Pago.nro_cuota).all()
     return render_template('pago/form.html', pago=pago,
                            otros_pagos=otros_pagos,
-                           today=date.today().isoformat())
+                           today=datetime.now().strftime('%Y-%m-%dT%H:%M'))
 
 
 @pago_bp.route('/genera-plan', methods=['GET', 'POST'])
@@ -859,8 +859,8 @@ def genera_plan():
                     fecha_pago=None,
                     referencia_pago='',
                     obs='',
-                    creado=date.today(),
-                    act=date.today(),
+                    creado=datetime.now(),
+                    act=datetime.now(),
                     usu_id=current_user.id
                 )
                 db.session.add(p)

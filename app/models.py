@@ -20,7 +20,7 @@ class Usuario(UserMixin, db.Model):
     email    = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     activo   = db.Column(db.Boolean, default=True)
-    last_login = db.Column(db.Date, nullable=False, default=date.today)
+    last_login = db.Column(db.DateTime, nullable=False, default=datetime.now)
     creado   = db.Column(db.DateTime, default=datetime.utcnow)
     act      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -46,7 +46,7 @@ class Rol(db.Model):
     rol         = db.Column(db.String(50), unique=True, nullable=False)
     descripcion = db.Column(db.String(255))
     creado      = db.Column(db.DateTime, default=datetime.utcnow)
-    act         = db.Column(db.Date)
+    act         = db.Column(db.DateTime)
 
     usuarios  = db.relationship('Usuario', secondary='usuario_rol', back_populates='roles')
     permisos  = db.relationship('Permiso', secondary='rol_permiso', back_populates='roles')
@@ -88,8 +88,8 @@ class Gestion(db.Model):
     inicio  = db.Column(db.Date, nullable=False)
     fin     = db.Column(db.Date, nullable=False)
     activo  = db.Column(db.Boolean, nullable=False, default=True)
-    creado  = db.Column(db.Date, nullable=False, default=date.today)
-    act     = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado  = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act     = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id  = db.Column(db.Integer, nullable=False)
 
     grados  = db.relationship('Grado', backref='gestion', lazy='dynamic')
@@ -102,8 +102,8 @@ class Grado(db.Model):
     grado  = db.Column(db.String(255), nullable=False)
     nivel  = db.Column(db.String(150), nullable=False)
     ges_id = db.Column(db.Integer, db.ForeignKey('gestion.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
-    creado = db.Column(db.Date, nullable=False, default=date.today)
-    act    = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act    = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id = db.Column(db.Integer, nullable=False)
 
     materias = db.relationship('Materia', backref='grado', lazy='dynamic')
@@ -116,8 +116,8 @@ class Materia(db.Model):
     id      = db.Column(db.Integer, primary_key=True)
     materia = db.Column(db.String(150), nullable=False)
     gra_id  = db.Column(db.Integer, db.ForeignKey('grado.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
-    creado  = db.Column(db.Date, nullable=False, default=date.today)
-    act     = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado  = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act     = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id  = db.Column(db.Integer, nullable=False)
 
 
@@ -134,8 +134,8 @@ class Profesor(db.Model):
     email       = db.Column(db.String(100))
     activo      = db.Column(db.Boolean, nullable=False, default=True)
     usr_id_login = db.Column(db.Integer)
-    creado      = db.Column(db.Date, nullable=False, default=date.today)
-    act         = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado      = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act         = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id      = db.Column(db.Integer, nullable=False)
 
     @property
@@ -153,8 +153,8 @@ class Curso(db.Model):
     aula      = db.Column(db.String(50))
     capacidad = db.Column(db.SmallInteger)
     gestion   = db.Column(db.SmallInteger, nullable=False)
-    creado    = db.Column(db.Date, nullable=False, default=date.today)
-    act       = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado    = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act       = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id    = db.Column(db.Integer, nullable=False)
 
     inscritos  = db.relationship('Inscrito', backref='curso', lazy='dynamic')
@@ -169,8 +169,8 @@ class Asignado(db.Model):
     cur_id = db.Column(db.Integer, db.ForeignKey('curso.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
     mat_id = db.Column(db.Integer, db.ForeignKey('materia.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=False)
     pro_id = db.Column(db.Integer, db.ForeignKey('profesor.id', onupdate='CASCADE', ondelete='RESTRICT'), nullable=True)
-    creado = db.Column(db.Date, nullable=False, default=date.today)
-    act    = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act    = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id = db.Column(db.Integer, nullable=False)
 
     materia  = db.relationship('Materia', backref='asignaciones')
@@ -193,8 +193,8 @@ class Alumno(db.Model):
     obs          = db.Column(db.String(100))
     usr_id_login = db.Column(db.Integer)
     foto_ruta    = db.Column(db.String(150))
-    creado       = db.Column(db.Date, nullable=False, default=date.today)
-    act          = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado       = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act          = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id       = db.Column(db.Integer, nullable=False)
 
     inscripcion = db.relationship('Inscrito', backref='alumno', uselist=False)
@@ -216,8 +216,8 @@ class Inscrito(db.Model):
     motivo_descuento = db.Column(db.String(100))
     abandono         = db.Column(db.Boolean, nullable=False, default=False)
     obs              = db.Column(db.String(200))
-    creado           = db.Column(db.Date, nullable=False, default=date.today)
-    act              = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado           = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act              = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id           = db.Column(db.Integer, nullable=False)
 
     notas  = db.relationship('Nota', backref='inscrito', lazy='dynamic')
@@ -237,8 +237,8 @@ class Nota(db.Model):
     nota_aprob  = db.Column(db.SmallInteger, nullable=False, default=51)
     aprobado    = db.Column(db.Boolean)
     obs         = db.Column(db.String(150))
-    creado      = db.Column(db.Date, nullable=False, default=date.today)
-    act         = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado      = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act         = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id      = db.Column(db.Integer, nullable=False)
 
     materia = db.relationship('Materia', backref='notas')
@@ -252,8 +252,8 @@ class Costo(db.Model):
     nro_cuota = db.Column(db.SmallInteger, nullable=False)
     cuota     = db.Column(db.Numeric(10, 2), nullable=False)
     obs       = db.Column(db.String(200), nullable=False)
-    creado    = db.Column(db.Date, nullable=False, default=date.today)
-    act       = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado    = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act       = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id    = db.Column(db.Integer, nullable=False)
 
 
@@ -266,11 +266,11 @@ class Pago(db.Model):
     cuota           = db.Column(db.Float, nullable=False)
     pagado          = db.Column(db.Boolean, default=False)
     metodo_pago     = db.Column(db.String(50))
-    fecha_pago      = db.Column(db.Date)
+    fecha_pago      = db.Column(db.DateTime)
     referencia_pago = db.Column(db.String(100))
     obs             = db.Column(db.String(100))
-    creado          = db.Column(db.Date, nullable=False, default=date.today)
-    act             = db.Column(db.Date, nullable=False, default=date.today, onupdate=date.today)
+    creado          = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    act             = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
     usu_id          = db.Column(db.Integer, nullable=False)
 
 
