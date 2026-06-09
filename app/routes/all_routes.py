@@ -796,40 +796,43 @@ def registrar(id):
                            today=datetime.now().strftime('%Y-%m-%dT%H:%M'))
 
 
-@pago_bp.route('/genera-plan', methods=['GET', 'POST'])
+@pago_bp.route('/actualiza-plan', methods=['GET', 'POST'])
 @login_required
-def genera_plan():
-    """Genera automáticamente el plan de pagos para todos los alumnos con
-    reserva=True o inscrito=True que aún no tengan cuotas registradas."""
-    from app.decorators import role_required
-    from flask import abort
+def actualiza_plan():
+    """Actualiza el plan de pagos para todos los alumnos con reserva=True o
+    inscrito=True aplicando las siguientes reglas:
+      - Si el inscrito tiene AL MENOS UN pago con pagado=True → se omite por completo.
+      - Si le faltan cuotas respecto al costo definido en su curso → se crean las faltantes.
+      - Si ya tiene todas las cuotas y ninguna está pagada → se omite (nada que agregar).
+    Solo disponible para el rol 'administrador'.
+    """
     if not current_user.has_role('administrador'):
         abort(403)
 
     if request.method == 'POST':
-        # Alumnos con reserva=True o inscrito=True
         candidatos = Inscrito.query.filter(
             db.or_(Inscrito.reserva == True, Inscrito.inscrito == True)
         ).all()
 
-        generados   = 0   # cantidad de alumnos a los que se les generó plan
-        omitidos    = 0   # ya tenían al menos una cuota
-        sin_costo   = 0   # su curso no tiene costos definidos
-        detalle     = []  # lista de dicts para mostrar en el template
+        actualizados  = 0   # alumnos a los que se les añadieron cuotas faltantes
+        omitidos_pago = 0   # tienen al menos un pago registrado como pagado → intocable
+        sin_costo     = 0   # su curso no tiene costos definidos
+        ya_completos  = 0   # ya tenían todas las cuotas y ninguna pagada
+        detalle       = []
 
         for ins in candidatos:
-            # Verificar si ya tiene pagos
-            tiene_pagos = Pago.query.filter_by(ins_id=ins.id).first()
-            if tiene_pagos:
-                omitidos += 1
+            # ── Regla 1: si existe algún pago pagado=True → NO actualizar ──
+            tiene_pagado = Pago.query.filter_by(ins_id=ins.id, pagado=True).first()
+            if tiene_pagado:
+                omitidos_pago += 1
                 detalle.append({
                     'alumno': ins.alumno.nombre_completo,
-                    'estado': 'omitido',
-                    'msg': 'Ya tenía plan de pagos'
+                    'estado': 'omitido_pagado',
+                    'msg': 'Tiene cuota(s) pagada(s) — no se modifica'
                 })
                 continue
 
-            # Obtener los costos del curso
+            # ── Obtener costos del curso ──
             costos = (Costo.query
                       .filter_by(cur_id=ins.cur_id)
                       .order_by(Costo.nro_cuota)
@@ -843,16 +846,34 @@ def genera_plan():
                 })
                 continue
 
-            # Calcular cuotas aplicando descuento si corresponde
-            for costo in costos:
+            # ── Cuotas que ya existen para este inscrito ──
+            cuotas_existentes = {
+                p.nro_cuota
+                for p in Pago.query.filter_by(ins_id=ins.id).all()
+            }
+            cuotas_esperadas = {c.nro_cuota for c in costos}
+            cuotas_faltantes = cuotas_esperadas - cuotas_existentes
+
+            if not cuotas_faltantes:
+                ya_completos += 1
+                detalle.append({
+                    'alumno': ins.alumno.nombre_completo,
+                    'estado': 'completo',
+                    'msg': f'Ya tiene las {len(costos)} cuota(s) — sin cambios'
+                })
+                continue
+
+            # ── Crear solo las cuotas faltantes ──
+            costos_dict = {c.nro_cuota: c for c in costos}
+            for nro in sorted(cuotas_faltantes):
+                costo = costos_dict[nro]
                 monto = float(costo.cuota)
                 if ins.descuento and ins.descuento > 0:
-                    # cuota = cuota - (descuento * cuota) / 100
                     monto = monto - (ins.descuento * monto) / 100
                     monto = round(monto, 2)
                 p = Pago(
                     ins_id=ins.id,
-                    nro_cuota=costo.nro_cuota,
+                    nro_cuota=nro,
                     cuota=monto,
                     pagado=False,
                     metodo_pago='',
@@ -865,37 +886,46 @@ def genera_plan():
                 )
                 db.session.add(p)
 
-            generados += 1
+            actualizados += 1
             detalle.append({
                 'alumno': ins.alumno.nombre_completo,
-                'estado': 'generado',
-                'msg': f'{len(costos)} cuota(s) generada(s)'
+                'estado': 'actualizado',
+                'msg': f'{len(cuotas_faltantes)} cuota(s) añadida(s)'
                        + (f' con {ins.descuento}% de descuento' if ins.descuento else '')
             })
 
         db.session.commit()
-        log_accion('BULK', 'pago', detalle={'accion': 'genera_plan', 'generados': generados, 'omitidos': omitidos, 'sin_costo': sin_costo})
+        log_accion('BULK', 'pago', detalle={
+            'accion': 'actualiza_plan',
+            'actualizados': actualizados,
+            'omitidos_pagado': omitidos_pago,
+            'ya_completos': ya_completos,
+            'sin_costo': sin_costo,
+        })
         return render_template(
-            'pago/genera_plan.html',
+            'pago/actualiza_plan.html',
             ejecutado=True,
-            generados=generados,
-            omitidos=omitidos,
+            actualizados=actualizados,
+            omitidos_pago=omitidos_pago,
+            ya_completos=ya_completos,
             sin_costo=sin_costo,
             detalle=detalle
         )
 
-    # GET — muestra pantalla de confirmación con vista previa
+    # ── GET: pantalla de confirmación con vista previa ──
     total_candidatos = Inscrito.query.filter(
         db.or_(Inscrito.reserva == True, Inscrito.inscrito == True)
     ).count()
-    sin_plan = (Inscrito.query
-                .filter(db.or_(Inscrito.reserva == True, Inscrito.inscrito == True))
-                .filter(~Inscrito.pagos.any())
-                .count())
+
+    # Inscritos sin ningún pago pagado y con costos → candidatos reales a actualizar
+    con_pago_pagado = (Inscrito.query
+                       .filter(db.or_(Inscrito.reserva == True, Inscrito.inscrito == True))
+                       .filter(Inscrito.pagos.any(Pago.pagado == True))
+                       .count())
 
     return render_template(
-        'pago/genera_plan.html',
+        'pago/actualiza_plan.html',
         ejecutado=False,
         total_candidatos=total_candidatos,
-        sin_plan=sin_plan
+        con_pago_pagado=con_pago_pagado
     )
