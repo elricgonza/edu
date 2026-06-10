@@ -77,6 +77,14 @@
   </div>
 </div>
 
+{# Calcular la primera cuota pendiente (la única habilitada para pago) #}
+{% set primera_pendiente_nro = namespace(val=none) %}
+{% for p in pagos %}
+  {% if not p.pagado and primera_pendiente_nro.val is none %}
+    {% set primera_pendiente_nro.val = p.nro_cuota %}
+  {% endif %}
+{% endfor %}
+
 <div class="card p-0 overflow-hidden">
   <div style="background:linear-gradient(135deg,#7C1F3E,#5C1530);"><table class="w-full"><thead><tr>
     <th class="px-4 py-3 text-left text-xs font-bold text-white/80 uppercase tracking-wider">Cuota</th>
@@ -89,31 +97,47 @@
   </tr></thead></table></div>
   <table class="w-full"><tbody>
     {% for p in pagos %}
-    <tr class="border-t border-slate-100 hover:bg-primary-50/40 transition-colors">
-      <td class="px-4 py-3 text-sm font-bold text-slate-700"># {{ p.nro_cuota }}</td>
-      <td class="px-4 py-3 text-sm font-semibold text-slate-800">Bs. {{ "%.2f"|format(p.cuota) }}</td>
+    {# Una cuota pendiente está habilitada SOLO si es la de menor nro_cuota sin pagar #}
+    {% set es_siguiente = (not p.pagado and p.nro_cuota == primera_pendiente_nro.val) %}
+    {% set bloqueada    = (not p.pagado and p.nro_cuota != primera_pendiente_nro.val) %}
+    <tr class="border-t border-slate-100 transition-colors {% if bloqueada %}bg-slate-50/60{% else %}hover:bg-primary-50/40{% endif %}">
+      <td class="px-4 py-3 text-sm font-bold {% if bloqueada %}text-slate-400{% else %}text-slate-700{% endif %}"># {{ p.nro_cuota }}</td>
+      <td class="px-4 py-3 text-sm font-semibold {% if bloqueada %}text-slate-400{% else %}text-slate-800{% endif %}">Bs. {{ "%.2f"|format(p.cuota) }}</td>
       <td class="px-4 py-3">
         {% if p.pagado %}
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Pagado
         </span>
+        {% elif es_siguiente %}
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pendiente
+        </span>
         {% else %}
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-          <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Pendiente
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>En espera
         </span>
         {% endif %}
       </td>
-      <td class="px-4 py-3 text-sm text-slate-600">{{ p.metodo_pago or '—' }}</td>
-      <td class="px-4 py-3 text-sm text-slate-600">{{ p.fecha_pago.strftime('%d/%m/%Y') if p.fecha_pago else '—' }}</td>
-      <td class="px-4 py-3 text-xs text-slate-500 font-mono">{{ p.referencia_pago or '—' }}</td>
+      <td class="px-4 py-3 text-sm {% if bloqueada %}text-slate-400{% else %}text-slate-600{% endif %}">{{ p.metodo_pago or '—' }}</td>
+      <td class="px-4 py-3 text-sm {% if bloqueada %}text-slate-400{% else %}text-slate-600{% endif %}">{{ p.fecha_pago.strftime('%d/%m/%Y') if p.fecha_pago else '—' }}</td>
+      <td class="px-4 py-3 text-xs {% if bloqueada %}text-slate-300{% else %}text-slate-500{% endif %} font-mono">{{ p.referencia_pago or '—' }}</td>
       <td class="px-4 py-3 text-center">
-        {% if not p.pagado and current_user.has_permission('pago_crear') %}
+        {% if p.pagado %}
+          {# Sin acción para cuotas ya pagadas #}
+        {% elif es_siguiente and current_user.has_permission('pago_crear') %}
         <a href="{{ url_for('pago.registrar', id=p.id) }}"
            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-all">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>Registrar
         </a>
+        {% elif bloqueada and current_user.has_permission('pago_crear') %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 bg-slate-100 cursor-not-allowed select-none"
+              title="Debe registrar primero la Cuota #{{ primera_pendiente_nro.val }}">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>Bloqueada
+        </span>
         {% endif %}
       </td>
     </tr>

@@ -778,7 +778,42 @@ def buscar_alumno():
 @permission_required('pago_crear')
 def registrar(id):
     pago = Pago.query.get_or_404(id)
+
+    # ── Validación de orden secuencial ──────────────────────────────────────
+    # No se permite registrar una cuota si existe alguna cuota anterior
+    # (nro_cuota menor) que aún no ha sido pagada.
+    cuota_pendiente_anterior = (
+        Pago.query
+        .filter(
+            Pago.ins_id   == pago.ins_id,
+            Pago.nro_cuota < pago.nro_cuota,
+            Pago.pagado   == False          # noqa: E712
+        )
+        .order_by(Pago.nro_cuota)
+        .first()
+    )
+
+    ins = Inscrito.query.get(pago.ins_id)
+
+    if cuota_pendiente_anterior:
+        flash(
+            f'No es posible registrar la Cuota #{pago.nro_cuota}. '
+            f'Debe registrar primero la Cuota #{cuota_pendiente_anterior.nro_cuota}.',
+            'warning'
+        )
+        return redirect(url_for('pago.index', alu_id=ins.alu_id))
+    # ────────────────────────────────────────────────────────────────────────
+
     if request.method == 'POST':
+        # Re-validar en POST (defensa ante manipulación directa de la URL)
+        if cuota_pendiente_anterior:
+            flash(
+                f'No es posible registrar la Cuota #{pago.nro_cuota}. '
+                f'Debe registrar primero la Cuota #{cuota_pendiente_anterior.nro_cuota}.',
+                'warning'
+            )
+            return redirect(url_for('pago.index', alu_id=ins.alu_id))
+
         pago.pagado = True
         pago.metodo_pago = request.form.get('metodo_pago')
         pago.fecha_pago = datetime.fromisoformat(request.form['fecha_pago'])
@@ -786,10 +821,16 @@ def registrar(id):
         pago.obs = request.form.get('obs')
         pago.act = datetime.now(); pago.usu_id = current_user.id
         db.session.commit()
-        log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={'ins_id': pago.ins_id, 'nro_cuota': pago.nro_cuota, 'cuota': pago.cuota, 'metodo_pago': pago.metodo_pago, 'fecha_pago': str(pago.fecha_pago)})
+        log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={
+            'ins_id': pago.ins_id,
+            'nro_cuota': pago.nro_cuota,
+            'cuota': pago.cuota,
+            'metodo_pago': pago.metodo_pago,
+            'fecha_pago': str(pago.fecha_pago)
+        })
         flash(f'Cuota {pago.nro_cuota} registrada como pagada.', 'success')
-        ins = Inscrito.query.get(pago.ins_id)
         return redirect(url_for('pago.index', alu_id=ins.alu_id))
+
     otros_pagos = Pago.query.filter_by(ins_id=pago.ins_id).order_by(Pago.nro_cuota).all()
     return render_template('pago/form.html', pago=pago,
                            otros_pagos=otros_pagos,
