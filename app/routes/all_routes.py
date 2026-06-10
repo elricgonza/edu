@@ -815,23 +815,11 @@ def actualiza_plan():
         ).all()
 
         actualizados  = 0   # alumnos a los que se les añadieron cuotas faltantes
-        omitidos_pago = 0   # tienen al menos un pago registrado como pagado → intocable
         sin_costo     = 0   # su curso no tiene costos definidos
-        ya_completos  = 0   # ya tenían todas las cuotas y ninguna pagada
+        ya_completos  = 0   # ya tenían todas las cuotas, nada que agregar
         detalle       = []
 
         for ins in candidatos:
-            # ── Regla 1: si existe algún pago pagado=True → NO actualizar ──
-            tiene_pagado = Pago.query.filter_by(ins_id=ins.id, pagado=True).first()
-            if tiene_pagado:
-                omitidos_pago += 1
-                detalle.append({
-                    'alumno': ins.alumno.nombre_completo,
-                    'estado': 'omitido_pagado',
-                    'msg': 'Tiene cuota(s) pagada(s) — no se modifica'
-                })
-                continue
-
             # ── Obtener costos del curso ──
             costos = (Costo.query
                       .filter_by(cur_id=ins.cur_id)
@@ -846,24 +834,30 @@ def actualiza_plan():
                 })
                 continue
 
-            # ── Cuotas que ya existen para este inscrito ──
-            cuotas_existentes = {
-                p.nro_cuota
-                for p in Pago.query.filter_by(ins_id=ins.id).all()
-            }
-            cuotas_esperadas = {c.nro_cuota for c in costos}
-            cuotas_faltantes = cuotas_esperadas - cuotas_existentes
+            # ── Cuotas que ya existen para este inscrito (pagadas o no) ──
+            # Los registros con pagado=True NO se tocan; pero su nro_cuota
+            # cuenta como "ya presente" y no se vuelve a crear.
+            pagos_actuales = Pago.query.filter_by(ins_id=ins.id).all()
+            cuotas_existentes = {p.nro_cuota for p in pagos_actuales}
+            cuotas_esperadas  = {c.nro_cuota for c in costos}
+            cuotas_faltantes  = cuotas_esperadas - cuotas_existentes
+
+            # Información de cuotas pagadas (solo para el mensaje de detalle)
+            cuotas_pagadas_cnt = sum(1 for p in pagos_actuales if p.pagado)
 
             if not cuotas_faltantes:
                 ya_completos += 1
+                msg = f'Ya tiene las {len(costos)} cuota(s) — sin cambios'
+                if cuotas_pagadas_cnt:
+                    msg += f' ({cuotas_pagadas_cnt} pagada(s))'
                 detalle.append({
                     'alumno': ins.alumno.nombre_completo,
                     'estado': 'completo',
-                    'msg': f'Ya tiene las {len(costos)} cuota(s) — sin cambios'
+                    'msg': msg
                 })
                 continue
 
-            # ── Crear solo las cuotas faltantes ──
+            # ── Crear solo las cuotas faltantes (nunca tocar las existentes) ──
             costos_dict = {c.nro_cuota: c for c in costos}
             for nro in sorted(cuotas_faltantes):
                 costo = costos_dict[nro]
@@ -887,18 +881,21 @@ def actualiza_plan():
                 db.session.add(p)
 
             actualizados += 1
+            msg = f'{len(cuotas_faltantes)} cuota(s) añadida(s)'
+            if cuotas_pagadas_cnt:
+                msg += f' ({cuotas_pagadas_cnt} cuota(s) pagada(s) conservada(s) sin cambios)'
+            if ins.descuento:
+                msg += f' — {ins.descuento}% de descuento aplicado'
             detalle.append({
                 'alumno': ins.alumno.nombre_completo,
                 'estado': 'actualizado',
-                'msg': f'{len(cuotas_faltantes)} cuota(s) añadida(s)'
-                       + (f' con {ins.descuento}% de descuento' if ins.descuento else '')
+                'msg': msg
             })
 
         db.session.commit()
         log_accion('BULK', 'pago', detalle={
             'accion': 'actualiza_plan',
             'actualizados': actualizados,
-            'omitidos_pagado': omitidos_pago,
             'ya_completos': ya_completos,
             'sin_costo': sin_costo,
         })
@@ -906,7 +903,6 @@ def actualiza_plan():
             'pago/actualiza_plan.html',
             ejecutado=True,
             actualizados=actualizados,
-            omitidos_pago=omitidos_pago,
             ya_completos=ya_completos,
             sin_costo=sin_costo,
             detalle=detalle
@@ -917,15 +913,8 @@ def actualiza_plan():
         db.or_(Inscrito.reserva == True, Inscrito.inscrito == True)
     ).count()
 
-    # Inscritos sin ningún pago pagado y con costos → candidatos reales a actualizar
-    con_pago_pagado = (Inscrito.query
-                       .filter(db.or_(Inscrito.reserva == True, Inscrito.inscrito == True))
-                       .filter(Inscrito.pagos.any(Pago.pagado == True))
-                       .count())
-
     return render_template(
         'pago/actualiza_plan.html',
         ejecutado=False,
-        total_candidatos=total_candidatos,
-        con_pago_pagado=con_pago_pagado
+        total_candidatos=total_candidatos
     )
