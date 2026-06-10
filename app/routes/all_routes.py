@@ -475,15 +475,16 @@ def nuevo():
         )
         db.session.add(ins); db.session.flush()
         costo = Costo.query.filter_by(cur_id=ins.cur_id).first()
-        if costo:
-            for i in range(1, costo.nro_cuota + 1):
-                monto = float(costo.cuota) * (1 - ins.descuento / 100)
-                p = Pago(ins_id=ins.id, nro_cuota=i, cuota=round(monto, 2),
-                         pagado=False, creado=datetime.now(), act=datetime.now(), usu_id=current_user.id)
-                db.session.add(p)
+        if descuento := ins.descuento != 100:
+            if costo:
+                for i in range(1, costo.nro_cuota + 1):
+                    monto = float(costo.cuota) * (1 - ins.descuento / 100)
+                    p = Pago(ins_id=ins.id, nro_cuota=i, cuota=round(monto, 2),
+                             pagado=False, creado=datetime.now(), act=datetime.now(), usu_id=current_user.id)
+                    db.session.add(p)
         db.session.commit()
         log_accion('CREATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'cur_id': ins.cur_id, 'inscrito': ins.inscrito, 'reserva': ins.reserva})
-        flash('Inscripción realizada. Plan de pagos generado.', 'success')
+        flash('Inscripción realizada. Plan de pagos generado, si descuento NO es total.', 'success')
         return redirect(url_for('inscrito.index'))
     return render_template('inscrito/form.html', inscrito=None, alumnos=alumnos, cursos=cursos)
 
