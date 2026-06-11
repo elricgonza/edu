@@ -6,7 +6,6 @@ from app.models import Grado, Gestion, Materia, Profesor, Curso, Alumno, Inscrit
 from app.decorators import permission_required
 from app.audit import log_accion
 from flask import abort
-
 PER_PAGE = 10   # Registros por página en todas las listas
 
 # ── GRADO ─────────────────────────────────────────────────
@@ -475,16 +474,15 @@ def nuevo():
         )
         db.session.add(ins); db.session.flush()
         costo = Costo.query.filter_by(cur_id=ins.cur_id).first()
-        if descuento := ins.descuento != 100:
-            if costo:
-                for i in range(1, costo.nro_cuota + 1):
-                    monto = float(costo.cuota) * (1 - ins.descuento / 100)
-                    p = Pago(ins_id=ins.id, nro_cuota=i, cuota=round(monto, 2),
-                             pagado=False, creado=datetime.now(), act=datetime.now(), usu_id=current_user.id)
-                    db.session.add(p)
+        if costo:
+            for i in range(1, costo.nro_cuota + 1):
+                monto = float(costo.cuota) * (1 - ins.descuento / 100)
+                p = Pago(ins_id=ins.id, nro_cuota=i, cuota=round(monto, 2),
+                         pagado=False, creado=datetime.now(), act=datetime.now(), usu_id=current_user.id)
+                db.session.add(p)
         db.session.commit()
         log_accion('CREATE', 'inscrito', entidad_id=ins.id, detalle={'alumno': ins.alumno.nombre_completo, 'cur_id': ins.cur_id, 'inscrito': ins.inscrito, 'reserva': ins.reserva})
-        flash('Inscripción realizada. Plan de pagos generado, si descuento NO es total.', 'success')
+        flash('Inscripción realizada. Plan de pagos generado.', 'success')
         return redirect(url_for('inscrito.index'))
     return render_template('inscrito/form.html', inscrito=None, alumnos=alumnos, cursos=cursos)
 
@@ -512,6 +510,108 @@ def editar(id):
 
 # ── NOTA ──────────────────────────────────────────────────
 nota_bp = Blueprint('nota', __name__, url_prefix='/nota')
+
+# ── Configuración de fechas de transcripción (parte del módulo nota) ──────────
+import json as _json
+import os as _os
+
+_CONFIG_NOTAS_PATH = _os.path.normpath(
+    _os.path.join(_os.path.dirname(__file__), '..', 'config_notas.json')
+)
+
+_CONFIG_NOTAS_DEFAULTS = {
+    "habilitar_nota1": False, "transcripcion_nota1_inicio": "", "transcripcion_nota1_final": "",
+    "habilitar_nota2": False, "transcripcion_nota2_inicio": "", "transcripcion_nota2_final": "",
+    "habilitar_nota3": False, "transcripcion_nota3_inicio": "", "transcripcion_nota3_final": "",
+}
+
+
+def get_config_notas() -> dict:
+    """Lee app/config_notas.json; si no existe retorna los valores por defecto."""
+    if not _os.path.exists(_CONFIG_NOTAS_PATH):
+        return dict(_CONFIG_NOTAS_DEFAULTS)
+    try:
+        with open(_CONFIG_NOTAS_PATH, 'r', encoding='utf-8') as f:
+            data = _json.load(f)
+        for k, v in _CONFIG_NOTAS_DEFAULTS.items():
+            data.setdefault(k, v)
+        return data
+    except (_json.JSONDecodeError, OSError):
+        return dict(_CONFIG_NOTAS_DEFAULTS)
+
+
+def _save_config_notas(cfg: dict) -> None:
+    with open(_CONFIG_NOTAS_PATH, 'w', encoding='utf-8') as f:
+        _json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+
+def nota_periodo_habilitada(periodo: int) -> tuple:
+    """Devuelve (permitido: bool, mensaje: str) para el período dado (1, 2 ó 3)."""
+    from datetime import date as _date
+    cfg     = get_config_notas()
+    habilitar = cfg.get(f'habilitar_nota{periodo}', False)
+    inicio_s  = cfg.get(f'transcripcion_nota{periodo}_inicio', '')
+    final_s   = cfg.get(f'transcripcion_nota{periodo}_final',  '')
+
+    if not habilitar:
+        return False, f'La transcripción del Período {periodo} está deshabilitada.'
+
+    if inicio_s and final_s:
+        try:
+            hoy    = _date.today()
+            inicio = _date.fromisoformat(inicio_s)
+            final  = _date.fromisoformat(final_s)
+            if not (inicio <= hoy <= final):
+                return (
+                    False,
+                    f'La transcripción del Período {periodo} solo está permitida '
+                    f'entre el {inicio.strftime("%d/%m/%Y")} y el {final.strftime("%d/%m/%Y")}.'
+                )
+        except ValueError:
+            pass
+    return True, ''
+
+
+@nota_bp.route('/config-transcripcion', methods=['GET', 'POST'])
+@login_required
+def config_transcripcion():
+    """Gestión de fechas de habilitación/restricción de transcripción de notas.
+    Solo accesible para el rol 'administrador'."""
+    if not current_user.has_role('administrador'):
+        abort(403)
+
+    cfg = get_config_notas()
+
+    if request.method == 'POST':
+        nueva_cfg = {}
+        for p in ('1', '2', '3'):
+            nueva_cfg[f'habilitar_nota{p}']            = f'habilitar_nota{p}' in request.form
+            nueva_cfg[f'transcripcion_nota{p}_inicio'] = request.form.get(f'transcripcion_nota{p}_inicio', '').strip()
+            nueva_cfg[f'transcripcion_nota{p}_final']  = request.form.get(f'transcripcion_nota{p}_final',  '').strip()
+
+        errores = []
+        for p in ('1', '2', '3'):
+            ini = nueva_cfg[f'transcripcion_nota{p}_inicio']
+            fin = nueva_cfg[f'transcripcion_nota{p}_final']
+            if ini and fin:
+                try:
+                    from datetime import date as _date
+                    if _date.fromisoformat(ini) > _date.fromisoformat(fin):
+                        errores.append(f'Período {p}: la fecha de inicio no puede ser posterior a la fecha final.')
+                except ValueError:
+                    errores.append(f'Período {p}: formato de fecha inválido.')
+
+        if errores:
+            for e in errores:
+                flash(e, 'danger')
+            return render_template('nota/config_transcripcion.html', cfg=nueva_cfg)
+
+        _save_config_notas(nueva_cfg)
+        flash('Configuración de fechas de transcripción guardada correctamente.', 'success')
+        return redirect(url_for('nota.config_transcripcion'))
+
+    return render_template('nota/config_transcripcion.html', cfg=cfg)
+# ── fin configuración transcripción ───────────────────────────────────────────
 
 
 def _profesor_actual():
@@ -661,6 +761,20 @@ def nueva():
         n1 = int(request.form.get('nota1', 0))
         n2 = int(request.form.get('nota2', 0))
         n3 = int(request.form.get('nota3', 0))
+
+        # ── Validación de períodos habilitados para transcripción ──────────
+        bloqueos = []
+        for periodo, valor in ((1, n1), (2, n2), (3, n3)):
+            if valor != 0:          # solo validar períodos con dato ingresado
+                permitido, msg = nota_periodo_habilitada(periodo)
+                if not permitido:
+                    bloqueos.append(msg)
+        if bloqueos:
+            for msg in bloqueos:
+                flash(msg, 'warning')
+            return redirect(url_for('nota.nueva'))
+        # ──────────────────────────────────────────────────────────────────
+
         nota_final = round((n1 + n2 + n3) / 3, 1)
         aprob = int(request.form.get('nota_aprob', 51))
         n = Nota(
@@ -716,9 +830,39 @@ def editar(id):
                 flash('No tiene permiso para editar notas en esa combinación de curso/materia.', 'danger')
                 return redirect(url_for('nota.index'))
 
+        nota1_anterior = n.nota1
+        nota2_anterior = n.nota2
+        nota3_anterior = n.nota3
+
         n.nota1      = int(request.form.get('nota1', 0))
         n.nota2      = int(request.form.get('nota2', 0))
         n.nota3      = int(request.form.get('nota3', 0))
+
+        # ── Validación de períodos habilitados para transcripción ──────────
+        # Solo se valida el período cuando su valor cambia respecto al anterior.
+        bloqueos = []
+        cambios = {
+            1: n.nota1 != nota1_anterior,
+            2: n.nota2 != nota2_anterior,
+            3: n.nota3 != nota3_anterior,
+        }
+        for periodo, cambio in cambios.items():
+            if cambio:
+                permitido, msg = nota_periodo_habilitada(periodo)
+                if not permitido:
+                    bloqueos.append(msg)
+        if bloqueos:
+            # Revertir cambios en memoria (no se hizo commit aún)
+            n.nota1 = nota1_anterior
+            n.nota2 = nota2_anterior
+            n.nota3 = nota3_anterior
+            db.session.expunge(n)   # descartar cambios pendientes en la sesión
+            db.session.expire_all()
+            for msg in bloqueos:
+                flash(msg, 'warning')
+            return redirect(url_for('nota.editar', id=n.id))
+        # ──────────────────────────────────────────────────────────────────
+
         n.nota_final = round((n.nota1 + n.nota2 + n.nota3) / 3, 1)
         n.nota_aprob = int(request.form.get('nota_aprob', 51))
         n.aprobado   = n.nota_final >= n.nota_aprob
@@ -779,42 +923,7 @@ def buscar_alumno():
 @permission_required('pago_crear')
 def registrar(id):
     pago = Pago.query.get_or_404(id)
-
-    # ── Validación de orden secuencial ──────────────────────────────────────
-    # No se permite registrar una cuota si existe alguna cuota anterior
-    # (nro_cuota menor) que aún no ha sido pagada.
-    cuota_pendiente_anterior = (
-        Pago.query
-        .filter(
-            Pago.ins_id   == pago.ins_id,
-            Pago.nro_cuota < pago.nro_cuota,
-            Pago.pagado   == False          # noqa: E712
-        )
-        .order_by(Pago.nro_cuota)
-        .first()
-    )
-
-    ins = Inscrito.query.get(pago.ins_id)
-
-    if cuota_pendiente_anterior:
-        flash(
-            f'No es posible registrar la Cuota #{pago.nro_cuota}. '
-            f'Debe registrar primero la Cuota #{cuota_pendiente_anterior.nro_cuota}.',
-            'warning'
-        )
-        return redirect(url_for('pago.index', alu_id=ins.alu_id))
-    # ────────────────────────────────────────────────────────────────────────
-
     if request.method == 'POST':
-        # Re-validar en POST (defensa ante manipulación directa de la URL)
-        if cuota_pendiente_anterior:
-            flash(
-                f'No es posible registrar la Cuota #{pago.nro_cuota}. '
-                f'Debe registrar primero la Cuota #{cuota_pendiente_anterior.nro_cuota}.',
-                'warning'
-            )
-            return redirect(url_for('pago.index', alu_id=ins.alu_id))
-
         pago.pagado = True
         pago.metodo_pago = request.form.get('metodo_pago')
         pago.fecha_pago = datetime.fromisoformat(request.form['fecha_pago'])
@@ -822,16 +931,10 @@ def registrar(id):
         pago.obs = request.form.get('obs')
         pago.act = datetime.now(); pago.usu_id = current_user.id
         db.session.commit()
-        log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={
-            'ins_id': pago.ins_id,
-            'nro_cuota': pago.nro_cuota,
-            'cuota': pago.cuota,
-            'metodo_pago': pago.metodo_pago,
-            'fecha_pago': str(pago.fecha_pago)
-        })
+        log_accion('UPDATE', 'pago', entidad_id=pago.id, detalle={'ins_id': pago.ins_id, 'nro_cuota': pago.nro_cuota, 'cuota': pago.cuota, 'metodo_pago': pago.metodo_pago, 'fecha_pago': str(pago.fecha_pago)})
         flash(f'Cuota {pago.nro_cuota} registrada como pagada.', 'success')
+        ins = Inscrito.query.get(pago.ins_id)
         return redirect(url_for('pago.index', alu_id=ins.alu_id))
-
     otros_pagos = Pago.query.filter_by(ins_id=pago.ins_id).order_by(Pago.nro_cuota).all()
     return render_template('pago/form.html', pago=pago,
                            otros_pagos=otros_pagos,
