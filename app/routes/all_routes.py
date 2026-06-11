@@ -545,10 +545,13 @@ def _save_config_notas(cfg: dict) -> None:
         _json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 
-def nota_periodo_habilitada(periodo: int) -> tuple:
-    """Devuelve (permitido: bool, mensaje: str) para el período dado (1, 2 ó 3)."""
+def nota_periodo_habilitada(periodo: int, es_admin: bool = False) -> tuple:
+    """Devuelve (permitido: bool, mensaje: str) para el período dado (1, 2 ó 3).
+    Si es_admin=True siempre retorna (True, '') — el administrador no tiene restricciones."""
+    if es_admin:
+        return True, ''
     from datetime import date as _date
-    cfg     = get_config_notas()
+    cfg       = get_config_notas()
     habilitar = cfg.get(f'habilitar_nota{periodo}', False)
     inicio_s  = cfg.get(f'transcripcion_nota{periodo}_inicio', '')
     final_s   = cfg.get(f'transcripcion_nota{periodo}_final',  '')
@@ -570,6 +573,16 @@ def nota_periodo_habilitada(periodo: int) -> tuple:
         except ValueError:
             pass
     return True, ''
+
+
+def get_estado_periodos(es_admin: bool = False) -> dict:
+    """Retorna el estado de habilitación de cada período para usarlo en el template.
+    Estructura: { 1: {'permitido': bool, 'msg': str}, 2: ..., 3: ... }"""
+    resultado = {}
+    for p in (1, 2, 3):
+        permitido, msg = nota_periodo_habilitada(p, es_admin=es_admin)
+        resultado[p] = {'permitido': permitido, 'msg': msg}
+    return resultado
 
 
 @nota_bp.route('/config-transcripcion', methods=['GET', 'POST'])
@@ -762,18 +775,19 @@ def nueva():
         n2 = int(request.form.get('nota2', 0))
         n3 = int(request.form.get('nota3', 0))
 
-        # ── Validación de períodos habilitados para transcripción ──────────
+        # ── Validación de períodos (solo para profesor, admin queda exento) ──
+        es_admin = current_user.has_role('administrador')
         bloqueos = []
         for periodo, valor in ((1, n1), (2, n2), (3, n3)):
-            if valor != 0:          # solo validar períodos con dato ingresado
-                permitido, msg = nota_periodo_habilitada(periodo)
+            if valor != 0:
+                permitido, msg = nota_periodo_habilitada(periodo, es_admin=es_admin)
                 if not permitido:
                     bloqueos.append(msg)
         if bloqueos:
             for msg in bloqueos:
                 flash(msg, 'warning')
             return redirect(url_for('nota.nueva'))
-        # ──────────────────────────────────────────────────────────────────
+        # ─────────────────────────────────────────────────────────────────────
 
         nota_final = round((n1 + n2 + n3) / 3, 1)
         aprob = int(request.form.get('nota_aprob', 51))
@@ -790,9 +804,11 @@ def nueva():
         flash('Nota registrada.', 'success')
         return redirect(url_for('nota.index'))
 
+    es_admin = current_user.has_role('administrador')
     return render_template('nota/form.html', nota=None,
                            inscritos=inscritos, materias=materias,
-                           es_profesor=es_profesor)
+                           es_profesor=es_profesor,
+                           periodos=get_estado_periodos(es_admin=es_admin))
 
 
 @nota_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
@@ -834,12 +850,12 @@ def editar(id):
         nota2_anterior = n.nota2
         nota3_anterior = n.nota3
 
-        n.nota1      = int(request.form.get('nota1', 0))
-        n.nota2      = int(request.form.get('nota2', 0))
-        n.nota3      = int(request.form.get('nota3', 0))
+        n.nota1 = int(request.form.get('nota1', 0))
+        n.nota2 = int(request.form.get('nota2', 0))
+        n.nota3 = int(request.form.get('nota3', 0))
 
-        # ── Validación de períodos habilitados para transcripción ──────────
-        # Solo se valida el período cuando su valor cambia respecto al anterior.
+        # ── Validación de períodos (solo para profesor, admin queda exento) ──
+        es_admin = current_user.has_role('administrador')
         bloqueos = []
         cambios = {
             1: n.nota1 != nota1_anterior,
@@ -848,20 +864,19 @@ def editar(id):
         }
         for periodo, cambio in cambios.items():
             if cambio:
-                permitido, msg = nota_periodo_habilitada(periodo)
+                permitido, msg = nota_periodo_habilitada(periodo, es_admin=es_admin)
                 if not permitido:
                     bloqueos.append(msg)
         if bloqueos:
-            # Revertir cambios en memoria (no se hizo commit aún)
             n.nota1 = nota1_anterior
             n.nota2 = nota2_anterior
             n.nota3 = nota3_anterior
-            db.session.expunge(n)   # descartar cambios pendientes en la sesión
+            db.session.expunge(n)
             db.session.expire_all()
             for msg in bloqueos:
                 flash(msg, 'warning')
             return redirect(url_for('nota.editar', id=n.id))
-        # ──────────────────────────────────────────────────────────────────
+        # ─────────────────────────────────────────────────────────────────────
 
         n.nota_final = round((n.nota1 + n.nota2 + n.nota3) / 3, 1)
         n.nota_aprob = int(request.form.get('nota_aprob', 51))
@@ -873,9 +888,11 @@ def editar(id):
         flash('Nota actualizada.', 'success')
         return redirect(url_for('nota.index', cur_id=n.inscrito.cur_id))
 
+    es_admin = current_user.has_role('administrador')
     return render_template('nota/form.html', nota=n,
                            inscritos=inscritos, materias=materias,
-                           es_profesor=es_profesor)
+                           es_profesor=es_profesor,
+                           periodos=get_estado_periodos(es_admin=es_admin))
 
 
 # ── PAGO ──────────────────────────────────────────────────
